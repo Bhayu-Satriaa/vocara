@@ -30,19 +30,34 @@ Rincian per role dan alur utama ada di [`docs/FEATURES.md`](docs/FEATURES.md).
 
 ## Instalasi
 
-**TODO — belum final.** Skeleton Laravel 13 sudah ada di folder ini dan `vendor/`
-sudah terisi. Yang belum ditetapkan tim:
+Yang dibutuhkan: **PHP 8.4 atau lebih baru** (`composer.lock` menuntut `>= 8.4.1`)
+dan **MySQL 8**. Di mesin dev ini dipakai PHP 8.5.12 dari Laragon
+(`D:\laragon\bin\php\php-8.5.12-Win32-vs17-x64\php.exe`) dan MySQL Laragon.
 
-- koneksi database: `.env` masih `DB_CONNECTION=sqlite`, sedangkan keputusan proyek
-  adalah MySQL (lihat `docs/DECISIONS.md`);
-- pembuatan database dan pengisian kredensial;
-- kredensial Google OAuth untuk login pasien.
+```bash
+composer install
+cp .env.example .env        # Windows: copy .env.example .env
+php artisan key:generate
+```
+
+`.env` diisi sendiri oleh masing-masing orang dan **tidak pernah di-commit**:
+`DB_CONNECTION=mysql`, `DB_DATABASE=klinik_db`, `DB_USERNAME`, `DB_PASSWORD`, plus
+kredensial Google OAuth setelah alur login pasien disetujui tim.
 
 ## Menjalankan
 
-**TODO — belum final.** Perintah diganti setelah setup disepakati (lihat bagian
-"Perintah penting" di `AGENTS.md`). Yang perlu diputuskan tim: perintah migrasi,
-seeder data master, menjalankan server lokal, dan test.
+```bash
+# sekali saja: buat database
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS klinik_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+php artisan migrate     # 23 tabel aplikasi (+ tabel bawaan Laravel)
+php artisan serve       # http://localhost:8000
+php artisan test        # pakai SQLite :memory:, tidak butuh MySQL
+```
+
+Skema yang sama juga tersedia sebagai SQL mentah — `klinik_schema.sql`
+(`mysql -u root < klinik_schema.sql`), berguna kalau ingin melihat atau
+menggambar ERD-nya.
 
 ## Dokumen
 
