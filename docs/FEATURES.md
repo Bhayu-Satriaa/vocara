@@ -63,8 +63,12 @@ Dua jalur yang sudah diputuskan sebagai fitur wajib:
   chatbot (pasien).
 - **Aturan wajib:** chatbot bukan pengganti dokter — disclaimer harus tampil pada
   triase dan saran, keputusan medis tetap di tangan dokter.
-- Jenis speech yang disepakati, penyedia model AI/API, dan pengaturan suara belum
-  final (lihat "Masih terbuka" di `docs/DECISIONS.md`).
+- **Sudah diputuskan** (rincian + alasan di `docs/DECISIONS.md`):
+  - **Suara** = Gemini Live API native audio (speech-to-speech) sebagai jalur utama;
+    cadangan bebas kuota = TTS/STT bawaan browser, dan Groq Whisper untuk dikte.
+  - **Otak chatbot (teks)** = model dari 9Router lokal (OpenAI-compatible), atau
+    Command Code Provider API.
+  - **Demo memakai data sintetis** — keluhan pasien nyata tidak dikirim ke penyedia AI.
 
 ## Bagian QR
 
