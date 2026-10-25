@@ -32,6 +32,7 @@ class LoginController extends Controller
             throw ValidationException::withMessages(['email' => 'Email atau password salah.']);
         }
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         if (! $user->staf() || ! $user->is_active) {
@@ -48,7 +49,10 @@ class LoginController extends Controller
         $request->session()->regenerate();
         ActivityLog::catat('login', 'Login staf sebagai '.$user->role);
 
-        return redirect()->intended(route('dashboard'));
+        // Admin langsung ke panel Filament; role lain ke dashboard sederhana.
+        $tujuan = $user->punyaRole('admin') ? '/admin' : route('dashboard');
+
+        return redirect()->intended($tujuan);
     }
 
     public function keluar(Request $request): RedirectResponse

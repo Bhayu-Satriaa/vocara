@@ -19,7 +19,7 @@
                 <nav class="flex items-center gap-4 text-sm">
                     <a href="{{ route('dashboard') }}" class="hover:underline">Dashboard</a>
                     @if (auth()->user()->punyaRole('admin'))
-                        <a href="{{ route('admin.pengguna') }}" class="hover:underline">Akun staf</a>
+                        <a href="{{ url('/admin') }}" class="hover:underline">Panel admin</a>
                     @endif
                     @if (auth()->user()->punyaRole('pasien'))
                         <a href="{{ route('pasien.profil') }}" class="hover:underline">Profil</a>

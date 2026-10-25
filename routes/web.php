@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
@@ -39,12 +38,4 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-// Panel admin: kelola akun staf (pasien mendaftar sendiri lewat Google).
-Route::middleware(['auth', 'role:admin'])
-    ->prefix('admin')
-    ->name('admin.')
-    ->group(function () {
-        Route::get('/pengguna', [UserController::class, 'index'])->name('pengguna');
-        Route::get('/pengguna/baru', [UserController::class, 'create'])->name('pengguna.baru');
-        Route::post('/pengguna', [UserController::class, 'store'])->name('pengguna.simpan');
-    });
+// Panel admin (Filament) ada di /admin; resource akun staf dikelola di sana.
