@@ -40,11 +40,17 @@ dan **MySQL 8**. Di mesin dev ini dipakai PHP 8.5.12 dari Laragon
 composer install
 cp .env.example .env        # Windows: copy .env.example .env
 php artisan key:generate
+npm install                 # Tailwind CSS 4 + Vite
+npm run build               # wajib: tampilan memakai @vite
 ```
 
 `.env` diisi sendiri oleh masing-masing orang dan **tidak pernah di-commit**:
 `DB_CONNECTION=mysql`, `DB_DATABASE=klinik_db`, `DB_USERNAME`, `DB_PASSWORD`, plus
 kredensial Google OAuth setelah alur login pasien disetujui tim.
+
+Saat mengembangkan tampilan, jalankan `npm run dev` (bukan `build`) supaya perubahan
+CSS langsung terlihat; jangan lupa jalankan sekali `npm run build` sebelum demo,
+karena tanpa `public/build/manifest.json` semua halaman ber-`@vite` error.
 
 ## Menjalankan
 
