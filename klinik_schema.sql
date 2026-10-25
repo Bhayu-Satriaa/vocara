@@ -2,6 +2,8 @@
 -- Skema Database Sistem Klinik Kesehatan (MySQL / InnoDB)
 -- Fitur: multi-role, QR pasien, antrean, rekam medis (SOAP),
 --        resep & farmasi, kasir, chatbot AI, AI speech
+-- 23 tabel. Anti double-booking ditegakkan database lewat uq_slot_dokter
+-- (kunjungan berstatus 'batal' diabaikan lewat kolom generated slot_aktif).
 -- =====================================================
 
 CREATE DATABASE IF NOT EXISTS klinik_db
@@ -88,6 +90,7 @@ CREATE TABLE doctor_schedules (
   hari        ENUM('Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu') NOT NULL,
   jam_mulai   TIME NOT NULL,
   jam_selesai TIME NOT NULL,
+  durasi_slot SMALLINT UNSIGNED NOT NULL DEFAULT 30,  -- menit per slot; dipakai backend untuk menghitung pilihan jam
   kuota       SMALLINT UNSIGNED NOT NULL DEFAULT 20,
   is_active   TINYINT(1) NOT NULL DEFAULT 1,
   CONSTRAINT fk_sched_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
@@ -103,8 +106,10 @@ CREATE TABLE visits (
   poli_id        BIGINT UNSIGNED NOT NULL,
   schedule_id    BIGINT UNSIGNED NULL,
   tgl_kunjungan  DATE NOT NULL,
+  jam            TIME NOT NULL,                     -- slot mulai kunjungan (harus salah satu jam di doctor_schedules)
   no_antrian     SMALLINT UNSIGNED NULL,
   status         ENUM('booking','menunggu','diperiksa','farmasi','pembayaran','selesai','batal') NOT NULL DEFAULT 'booking',
+  slot_aktif     TINYINT(1) GENERATED ALWAYS AS (IF(status = 'batal', NULL, 1)) STORED,  -- NULL untuk kunjungan batal, supaya slot bisa dipesan ulang
   sumber         ENUM('online','walk_in','chatbot') NOT NULL DEFAULT 'online',
   keluhan_awal   TEXT NULL,
   checkin_metode ENUM('qr','manual') NULL,
@@ -112,7 +117,8 @@ CREATE TABLE visits (
   checkin_by     BIGINT UNSIGNED NULL,
   created_at     TIMESTAMP NULL,
   updated_at     TIMESTAMP NULL,
-  UNIQUE KEY uq_antrian (poli_id, doctor_id, tgl_kunjungan, no_antrian),
+  UNIQUE KEY uq_slot_dokter (doctor_id, tgl_kunjungan, jam, slot_aktif),  -- anti double-booking: dua kunjungan aktif di slot sama ditolak database
+  UNIQUE KEY uq_antrian (poli_id, doctor_id, tgl_kunjungan, no_antrian),  -- nomor antrean tidak boleh kembar (baru mengikat setelah check-in)
   INDEX idx_visit_tgl (tgl_kunjungan, status),
   CONSTRAINT fk_visits_patient  FOREIGN KEY (patient_id)  REFERENCES patients(id),
   CONSTRAINT fk_visits_doctor   FOREIGN KEY (doctor_id)   REFERENCES doctors(id),

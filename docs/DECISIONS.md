@@ -7,7 +7,7 @@ tim membatalkannya secara eksplisit di sini.
 | Konteks | Keputusan | Alasan / catatan |
 |---|---|---|
 | Bentuk aplikasi | Web | Keputusan tim; fitur wajib (chatbot, speech) akan dipakai dari browser |
-| Database | MySQL, InnoDB, utf8mb4; skema lengkap di `klinik_schema.sql` (26 tabel) | Satu sumber kebenaran untuk struktur data |
+| Database | MySQL, InnoDB, utf8mb4; skema lengkap di `klinik_schema.sql` (23 tabel) | Satu sumber kebenaran untuk struktur data |
 | Fitur wajib | Chatbot AI **dan** AI Speech (STT dan/atau TTS) | Disepakati tim sebagai pembeda tugas |
 | Tambahan yang diputuskan | QR code pasien | Mempermudah registrasi dan check-in |
 | Login pasien | Google OAuth (Laravel Socialite) + **nomor WA wajib** di profil | Tanpa OTP dulu; WhatsApp belum jadi jalur verifikasi. Middleware memblokir booking & QR sampai profil lengkap |
@@ -23,6 +23,8 @@ tim membatalkannya secara eksplisit di sini.
 | Peran chatbot | **Bukan pengganti dokter** | Disclaimer wajib pada triase dan saran; keputusan medis tetap di tangan dokter |
 | Akses rekam medis | Kontrol akses per role + pencatatan di `activity_logs` | Rekam medis data sensitif |
 | Konvensi teknis | Migrasi, Eloquent, policy/middleware per role, Blade + Tailwind | Mengikuti konvensi Laravel |
+| Slot jam kunjungan | `visits.jam` (TIME, NOT NULL) + `doctor_schedules.durasi_slot` (menit, default 30) | Booking harus punya jam, bukan hanya tanggal. Backend yang menghitung pilihan jam dari `jam_mulai`, `jam_selesai`, dan `durasi_slot` — bukan model AI |
+| Anti double-booking | Ditegakkan database: `UNIQUE uq_slot_dokter (doctor_id, tgl_kunjungan, jam, slot_aktif)`; `slot_aktif` kolom generated yang bernilai NULL bila status `batal` | Jadwal bentrok tidak boleh bergantung pada pengecekan `if` di aplikasi. Kunjungan batal tetap menyimpan riwayat, tapi slotnya bebas dipesan ulang |
 
 ## Masih terbuka
 
@@ -34,6 +36,20 @@ Butuh keputusan tim:
 4. **Pembagian tugas** per anggota.
 5. **Perintah teknis** (instalasi, migrasi, menjalankan, test) — sengaja belum ditulis
    di `AGENTS.md`/`README.md` sampai setup disepakati.
+6. **10 tabel belum punya `created_at`/`updated_at`** (polis, doctors,
+   doctor_schedules, diseases, medical_record_diagnoses, services, visit_services,
+   medicines, prescription_items, chat_conversations). Sementara ini model
+   Eloquent-nya memakai `$timestamps = false`; tambah kolomnya kalau tim mau seragam.
+7. **Pasien walk-in tanpa NIK** tidak bisa didaftarkan karena `patients.nik` dan
+   `patients.no_wa` NOT NULL. Perlu keputusan: wajibkan NIK, atau sediakan nilai
+   sementara.
+8. **Nomor antrean** (`visits.no_antrian`) belum jelas kapan dibuat — saat booking
+   atau saat check-in. `uq_antrian` baru mengikat setelah nomornya terisi.
+9. **PHP untuk Laravel 13.30:** `composer.lock` menuntut PHP **>= 8.4.1**, sedangkan
+   Laragon yang terpasang hanya PHP 8.1.10 dan 8.3.12 (artisan gagal dengan
+   "Composer detected issues in your platform"). Yang bisa dipakai sekarang:
+   `C:\php\php.exe` (PHP 8.5.6, sudah ada di PATH Windows). Pilihan: pasang PHP 8.4
+   di Laragon, atau semua perintah artisan dijalankan lewat `C:\php\php.exe`.
 
 ## Fitur tambahan yang pernah diusulkan (belum diputuskan)
 

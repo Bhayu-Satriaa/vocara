@@ -1,7 +1,7 @@
 # Database
 
 - Database: **MySQL**, engine **InnoDB**, charset **utf8mb4**.
-- Skema lengkap: **`klinik_schema.sql`** (26 tabel, lengkap dengan foreign key).
+- Skema lengkap: **`klinik_schema.sql`** (23 tabel, lengkap dengan foreign key).
 - Dokumen ini hanya ringkasan. **Jangan menyalin/menulis ulang definisi tabel dari
   sini** — kalau butuh kolom, tipe, atau constraint, baca `klinik_schema.sql`.
 
@@ -47,6 +47,12 @@ Arah relasi di atas mengikuti penamaan tabel; nama kolom foreign key yang tepat
 
 - **Token QR** disimpan di `patients.qr_token` dan berupa **UUID acak**. Jangan
   menyimpan NIK atau data medis di QR.
+- **Slot jam kunjungan** disimpan di `visits.jam`. Satu dokter tidak boleh punya dua
+  kunjungan **aktif** di tanggal + jam yang sama: dijaga `UNIQUE uq_slot_dokter`
+  (`doctor_id`, `tgl_kunjungan`, `jam`, `slot_aktif`). Kolom generated `slot_aktif`
+  bernilai NULL kalau status `batal`, sehingga slot bekas batal bisa dipesan ulang.
+  Pilihan jam dihitung backend dari `doctor_schedules.jam_mulai`, `jam_selesai`, dan
+  `durasi_slot`.
 - **Harga disalin** ke `visit_services.harga` dan `prescription_items.harga` saat
   transaksi terjadi — bukan hasil hitung ulang dari data master.
 - Catatan pemeriksaan hasil dikte ditandai **`medical_records.diinput_via_suara`**.
