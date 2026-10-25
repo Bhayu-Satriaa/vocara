@@ -77,13 +77,19 @@ Butuh keputusan tim:
     (manfaat langganan Google AI Pro) boleh dipakai untuk Gemini API. Catatan
     resmi: manfaat AI Pro untuk developer hanya berlaku di UI AI Studio,
     sedangkan pemakaian API key/aplikasi "billed and managed separately".
-13. **Prefix `cmc/` di 9Router** diduga berasal dari langganan **Command Code**,
-    tapi belum identik: 9Router punya `cmc/xiaomi/mimo-v2.5`, sedangkan katalog
-    Command Code (dicek 25 Okt 2026, 93 model) berisi **MiMo V2.6** —
-    `xiaomi/mimo-v2.6-pro`, `-pro-ultraspeed`, `-flash`. Label kemampuan di halaman
-    model Command Code hanya **Text input / Vision / Reasoning** — tidak ada audio
-    sama sekali, jadi jalur suara memang tidak bisa dari sana. **Perlu konfirmasi
-    Jian** siapa penyedia di balik `cmc/`.
+13. **`cmc/` di 9Router dikonfirmasi = Command Code.** Daftar model 9Router yang
+    aktif (23 model, semuanya `owned_by: cmc`) membawa metadata
+    `"thinkingFormat": "commandcode"` — itu tanda langsung penyedianya Command Code.
+    Semua 23 model punya **`audioInput: false` dan `audioOutput: false`** → 9Router
+    (sebagaimana terkonfigurasi sekarang) **tidak bisa** untuk suara.
+    Katalog 9Router mengenal 24 provider (termasuk `groq`, `gemini`, `openai`, `xai`)
+    dan di dalamnya ada model suara: `groq:whisper-large-v3` +
+    `groq:whisper-large-v3-turbo` (audioInput), 22 model `gemini:*` (audioInput,
+    termasuk varian Live), `openai:gpt-realtime-2.1`. **Yang muncul hanya audioInput
+    (masuk), tidak ada audioOutput** — jadi TTS tetap dari browser/Gemini Live.
+    Catatan: metadata katalog tidak selalu cocok dengan model yang benar-benar aktif
+    (`commandcode:*` ditandai audioInput `true` di katalog, padahal daftar aktif
+    menyebut `false`) → keputusan suara harus lewat uji nyata, bukan metadata.
 
 ## Fitur tambahan yang pernah diusulkan (belum diputuskan)
 
