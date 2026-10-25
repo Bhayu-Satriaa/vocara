@@ -23,6 +23,8 @@ tim membatalkannya secara eksplisit di sini.
 | Peran chatbot | **Bukan pengganti dokter** | Disclaimer wajib pada triase dan saran; keputusan medis tetap di tangan dokter |
 | Akses rekam medis | Kontrol akses per role + pencatatan di `activity_logs` | Rekam medis data sensitif |
 | Konvensi teknis | Migrasi, Eloquent, policy/middleware per role, Blade + Tailwind | Mengikuti konvensi Laravel |
+| Format nomor rekam medis | `RM-` + 6 angka urut (`RM-000001`) | Belum ditetapkan di dokumen sumber; dipilih supaya singkat dibaca di kartu pasien dan mudah diurutkan. **Perlu konfirmasi tim.** |
+| Gambar QR pasien | Belum dibuat — sementara halaman kartu QR hanya menampilkan tokennya | Butuh paket pembuat QR (mis. `simplesoftwareio/simple-qrcode`); aturan repo: paket baru harus disetujui seluruh kelompok dulu |
 | Slot jam kunjungan | `visits.jam` (TIME, NOT NULL) + `doctor_schedules.durasi_slot` (menit, default 30) | Booking harus punya jam, bukan hanya tanggal. Backend yang menghitung pilihan jam dari `jam_mulai`, `jam_selesai`, dan `durasi_slot` — bukan model AI |
 | Anti double-booking | Ditegakkan database: `UNIQUE uq_slot_dokter (doctor_id, tgl_kunjungan, jam, slot_aktif)`; `slot_aktif` kolom generated yang bernilai NULL bila status `batal` | Jadwal bentrok tidak boleh bergantung pada pengecekan `if` di aplikasi. Kunjungan batal tetap menyimpan riwayat, tapi slotnya bebas dipesan ulang |
 
@@ -50,6 +52,13 @@ Butuh keputusan tim:
    "Composer detected issues in your platform"). Yang bisa dipakai sekarang:
    `C:\php\php.exe` (PHP 8.5.6, sudah ada di PATH Windows). Pilihan: pasang PHP 8.4
    di Laragon, atau semua perintah artisan dijalankan lewat `C:\php\php.exe`.
+10. **Kredensial Google OAuth** (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+    `GOOGLE_REDIRECT_URI`) belum diisi, jadi tombol "Masuk dengan Google" masih
+    memutar balik ke halaman login dengan pesan yang jelas. Harus dibuatkan OAuth
+    Client (tipe Web application) di Google Cloud Console, redirect URI
+    `http://localhost:8000/auth/google/callback`.
+11. **Gambar QR untuk diunduh/dicetak** belum ada — butuh persetujuan paket
+    pembuat QR. Setelah itu baru bisa masuk ke desain kartu pasien.
 
 ## Fitur tambahan yang pernah diusulkan (belum diputuskan)
 

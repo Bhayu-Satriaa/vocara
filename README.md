@@ -8,10 +8,11 @@ untuk mempercepat registrasi dan check-in.
 Stack: **Laravel 13** (PHP) + Blade + **Tailwind CSS**, database **MySQL**
 (InnoDB, utf8mb4).
 
-> **Status: fitur pertama sudah jalan.** Yang ada sekarang: login staf multi-role
-> (email + password, akun dibuat admin), middleware pembatas role, dan dashboard
-> terpisah per role. Modul klinik (data pasien, QR, kunjungan, pemeriksaan dokter,
-> farmasi, kasir) belum dibuat.
+> **Status: dua alur login sudah jalan.** Yang ada sekarang: login staf multi-role
+> (email + password, akun dibuat admin), login pasien lewat **Google OAuth**,
+> halaman Lengkapi Profil (nomor WA wajib) + kartu QR pasien, middleware pembatas
+> role dan profil, dashboard terpisah per role, dan panel admin untuk mengelola akun
+> staf. Modul klinik (kunjungan, pemeriksaan dokter, farmasi, kasir) belum dibuat.
 
 ## Fitur ringkas
 
@@ -47,6 +48,21 @@ npm run build               # wajib: tampilan memakai @vite
 `.env` diisi sendiri oleh masing-masing orang dan **tidak pernah di-commit**:
 `DB_CONNECTION=mysql`, `DB_DATABASE=klinik_db`, `DB_USERNAME`, `DB_PASSWORD`, plus
 kredensial Google OAuth setelah alur login pasien disetujui tim.
+
+### Login Google pasien
+
+Tiga kunci ini wajib ada di `.env` supaya tombol "Masuk dengan Google" berfungsi:
+
+```
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
+```
+
+Buat **OAuth Client ID** tipe *Web application* di Google Cloud Console, lalu
+tambahkan `http://localhost:8000/auth/google/callback` ke bagian *Authorized
+redirect URIs*. Tanpa kredensial ini, tombol Google akan memutar balik ke halaman
+login dengan pesan "Login Google belum diatur".
 
 Saat mengembangkan tampilan, jalankan `npm run dev` (bukan `build`) supaya perubahan
 CSS langsung terlihat; jangan lupa jalankan sekali `npm run build` sebelum demo,
