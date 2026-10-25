@@ -16,13 +16,13 @@ class DashboardController extends Controller
     /** Halaman utama setelah login; isinya menyesuaikan role. */
     public function index(): View
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
-
-        abort_unless($user->staf(), 403, 'Halaman ini untuk staf.');
 
         return view("dashboard.{$user->role}", [
             'user' => $user,
             'statistik' => $user->punyaRole('admin') ? $this->statistikAdmin() : [],
+            'pasien' => $user->punyaRole('pasien') ? $user->patients()->first() : null,
         ]);
     }
 

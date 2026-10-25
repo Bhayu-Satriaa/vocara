@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             // Dipakai di route: ->middleware('role:admin')
             'role' => \App\Http\Middleware\PastikanRole::class,
+            // Pasien wajib lengkapi profil (nomor WA) sebelum booking / pakai QR.
+            'profil' => \App\Http\Middleware\PastikanProfilLengkap::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

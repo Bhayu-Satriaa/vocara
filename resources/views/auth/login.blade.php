@@ -41,5 +41,17 @@
                 Masuk
             </button>
         </form>
+
+        <div class="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+            <p class="mb-3 text-sm text-slate-600">Kamu pasien?</p>
+            <a href="{{ route('google.arahkan') }}"
+               class="block w-full rounded-md border border-slate-300 px-4 py-2 text-center text-sm font-medium hover:bg-slate-50">
+                Masuk dengan Google
+            </a>
+            <p class="mt-3 text-xs text-slate-400">
+                Pertama kali masuk, kamu diarahkan melengkapi profil (nomor WA wajib) dan kartu QR
+                dibuat otomatis.
+            </p>
+        </div>
     </div>
 @endsection

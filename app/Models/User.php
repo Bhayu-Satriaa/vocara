@@ -44,6 +44,18 @@ class User extends Authenticatable
         return in_array($this->role, $role, true);
     }
 
+    /**
+     * Profil pasien dianggap lengkap kalau biodatanya sudah ada dan nomor WA terisi.
+     * Nomor WA belum diverifikasi OTP — verifikasi nyata dilakukan petugas dengan KTP.
+     */
+    public function profilLengkap(): bool
+    {
+        return $this->patients()
+            ->whereNotNull('no_wa')
+            ->where('no_wa', '!=', '')
+            ->exists();
+    }
+
     /** Staf = semua role selain pasien; hanya staf yang login dengan password. */
     public function staf(): bool
     {

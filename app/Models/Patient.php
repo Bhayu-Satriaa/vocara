@@ -61,4 +61,17 @@ class Patient extends Model
     {
         return $this->verification_status === 'terverifikasi';
     }
+
+    /** Nomor rekam medis berurutan: RM-000001, RM-000002, ... */
+    public static function nomorRekamMedisBaru(): string
+    {
+        $urut = (int) static::query()->max('id') + 1;
+
+        do {
+            $nomor = 'RM-'.str_pad((string) $urut, 6, '0', STR_PAD_LEFT);
+            $urut++;
+        } while (static::query()->where('no_rm', $nomor)->exists());
+
+        return $nomor;
+    }
 }

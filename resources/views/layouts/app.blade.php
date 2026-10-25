@@ -21,6 +21,10 @@
                     @if (auth()->user()->punyaRole('admin'))
                         <a href="{{ route('admin.pengguna') }}" class="hover:underline">Akun staf</a>
                     @endif
+                    @if (auth()->user()->punyaRole('pasien'))
+                        <a href="{{ route('pasien.profil') }}" class="hover:underline">Profil</a>
+                        <a href="{{ route('pasien.qr') }}" class="hover:underline">Kartu QR</a>
+                    @endif
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-50">
@@ -36,6 +40,12 @@
         @if (session('sukses'))
             <div class="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                 {{ session('sukses') }}
+            </div>
+        @endif
+
+        @if (session('peringatan'))
+            <div class="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                {{ session('peringatan') }}
             </div>
         @endif
 
