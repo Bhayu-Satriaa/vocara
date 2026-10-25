@@ -23,6 +23,7 @@ tim membatalkannya secara eksplisit di sini.
 | Peran chatbot | **Bukan pengganti dokter** | Disclaimer wajib pada triase dan saran; keputusan medis tetap di tangan dokter |
 | Akses rekam medis | Kontrol akses per role + pencatatan di `activity_logs` | Rekam medis data sensitif |
 | Konvensi teknis | Migrasi, Eloquent, policy/middleware per role, Blade + Tailwind | Mengikuti konvensi Laravel |
+| Dashboard staf | Back office memakai **Filament v5** di `/admin` (keputusan Jian: "biar cepat, nanti kita redesign") | Menghemat waktu; resource Filament dibatasi per role (`canAccess`), akses panel hanya untuk staf aktif (`canAccessPanel`). Halaman admin Blade lama sudah dihapus. Tampilan masih tema bawaan, redesign menyusul |
 | Format nomor rekam medis | `RM-` + 6 angka urut (`RM-000001`) | Belum ditetapkan di dokumen sumber; dipilih supaya singkat dibaca di kartu pasien dan mudah diurutkan. **Perlu konfirmasi tim.** |
 | Gambar QR pasien | Belum dibuat — sementara halaman kartu QR hanya menampilkan tokennya | Butuh paket pembuat QR (mis. `simplesoftwareio/simple-qrcode`); aturan repo: paket baru harus disetujui seluruh kelompok dulu |
 | Slot jam kunjungan | `visits.jam` (TIME, NOT NULL) + `doctor_schedules.durasi_slot` (menit, default 30) | Booking harus punya jam, bukan hanya tanggal. Backend yang menghitung pilihan jam dari `jam_mulai`, `jam_selesai`, dan `durasi_slot` — bukan model AI |

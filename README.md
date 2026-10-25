@@ -8,11 +8,11 @@ untuk mempercepat registrasi dan check-in.
 Stack: **Laravel 13** (PHP) + Blade + **Tailwind CSS**, database **MySQL**
 (InnoDB, utf8mb4).
 
-> **Status: dua alur login sudah jalan.** Yang ada sekarang: login staf multi-role
-> (email + password, akun dibuat admin), login pasien lewat **Google OAuth**,
-> halaman Lengkapi Profil (nomor WA wajib) + kartu QR pasien, middleware pembatas
-> role dan profil, dashboard terpisah per role, dan panel admin untuk mengelola akun
-> staf. Modul klinik (kunjungan, pemeriksaan dokter, farmasi, kasir) belum dibuat.
+> **Status: alur login + panel admin sudah jalan.** Yang ada sekarang: login staf
+> multi-role (email + password), login pasien lewat **Google OAuth**, halaman
+> Lengkapi Profil (nomor WA wajib) + kartu QR pasien, dan **panel admin Filament**
+> di `/admin` (mulai dari resource akun staf). Modul klinik (kunjungan, pemeriksaan
+> dokter, farmasi, kasir) belum dibuat.
 
 ## Fitur ringkas
 
@@ -96,6 +96,22 @@ Isi data master: 3 poli, 3 dokter, 15 jadwal praktik (Senin–Jumat, slot 30 men
 
 Akun **pasien** tidak dibuat lewat seeder: pasien mendaftar sendiri lewat Google
 (modulnya belum dikerjakan). Halaman login `/login` khusus staf.
+
+## Panel admin (Filament)
+
+Back office dibuat dengan **Filament v5** di `/admin`:
+
+- Login panel pakai akun staf (`admin@klinik.test` / `password`). Semua staf aktif
+  boleh masuk panel, tapi **resource dibatasi per role**: resource "Akun staf"
+  (buat/edit akun dokter, petugas, apoteker) hanya untuk role `admin`.
+- Diminta Jian: **tampilan akan di-redesign** menyusul — sekarang masih tema
+  bawaan Filament (warna Amber).
+- Halaman Blade lama (`/admin/pengguna`) sudah dihapus; akun staf sekarang hanya
+  dikelola dari panel, dan setiap penambahan/perubahan akun tercatat di
+  `activity_logs`.
+- Aset Filament dipublikasikan dengan `php artisan filament:assets` (folder
+  `public/css|js|fonts/filament` di-`.gitignore`, jadi jalankan perintah itu setelah
+  clone kalau panel tampil tanpa CSS).
 
 ## Dokumen
 
