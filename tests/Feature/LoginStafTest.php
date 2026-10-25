@@ -20,15 +20,25 @@ class LoginStafTest extends TestCase
 
     public function test_staf_bisa_masuk_lalu_diarahkan_ke_dashboard(): void
     {
-        $admin = User::factory()->role('admin')->create(['email' => 'admin@klinik.test']);
+        $petugas = User::factory()->role('petugas')->create(['email' => 'petugas@klinik.test']);
+
+        $this->post(route('login.masuk'), [
+            'email' => 'petugas@klinik.test',
+            'password' => UserFactory::PASSWORD,
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($petugas);
+        $this->get(route('dashboard'))->assertOk()->assertSee('Dashboard petugas');
+    }
+
+    public function test_admin_diarahkan_ke_panel_filament(): void
+    {
+        User::factory()->role('admin')->create(['email' => 'admin@klinik.test']);
 
         $this->post(route('login.masuk'), [
             'email' => 'admin@klinik.test',
             'password' => UserFactory::PASSWORD,
-        ])->assertRedirect(route('dashboard'));
-
-        $this->assertAuthenticatedAs($admin);
-        $this->get(route('dashboard'))->assertOk()->assertSee('Dashboard admin');
+        ])->assertRedirect('/admin');
     }
 
     public function test_password_salah_ditolak(): void
