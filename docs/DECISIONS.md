@@ -28,7 +28,7 @@ tim membatalkannya secara eksplisit di sini.
 | Gambar QR pasien | Belum dibuat — sementara halaman kartu QR hanya menampilkan tokennya | Butuh paket pembuat QR (mis. `simplesoftwareio/simple-qrcode`); aturan repo: paket baru harus disetujui seluruh kelompok dulu |
 | Slot jam kunjungan | `visits.jam` (TIME, NOT NULL) + `doctor_schedules.durasi_slot` (menit, default 30) | Booking harus punya jam, bukan hanya tanggal. Backend yang menghitung pilihan jam dari `jam_mulai`, `jam_selesai`, dan `durasi_slot` — bukan model AI |
 | Anti double-booking | Ditegakkan database: `UNIQUE uq_slot_dokter (doctor_id, tgl_kunjungan, jam, slot_aktif)`; `slot_aktif` kolom generated yang bernilai NULL bila status `batal` | Jadwal bentrok tidak boleh bergantung pada pengecekan `if` di aplikasi. Kunjungan batal tetap menyimpan riwayat, tapi slotnya bebas dipesan ulang |
-| **Suara (AI speech)** | **Gemini Live API native audio** — model `models/gemini-2.5-flash-native-audio-preview-12-2025`, suara `Kore` — sebagai jalur utama; **cadangan bebas kuota**: TTS/STT bawaan browser (`speechSynthesis`, `SpeechRecognition`) dan Groq Whisper untuk dikte | Sudah terbukti jalan di prototipe lama (`Politani/Semester 3/PBL - Appointment AI/poc`): speech-to-speech native, bukan STT+TTS terpisah. Kuotanya kuota API biasa, **bukan** kuota langganan — lihat "Masih terbuka" no. 12 |
+| **Suara (AI speech)** | **Gemini Live API native audio** — model `models/gemini-2.5-flash-native-audio-preview-12-2025`, suara `Kore` — sebagai jalur utama; **cadangan bebas kuota**: TTS/STT bawaan browser (`speechSynthesis`, `SpeechRecognition`) dan Groq Whisper untuk dikte | Sudah terbukti jalan di prototipe lama (`Politani/Semester 3/PBL - Appointment AI/poc`): speech-to-speech native, bukan STT+TTS terpisah. **Sementara ini memakai free tier** (billing/kredit ditunda — lihat "Masih terbuka" no. 12), jadi jalur cadangan bebas kuota wajib tetap dibangun, bukan opsional |
 | **Otak chatbot (teks)** | Model dari **9Router lokal** (endpoint OpenAI-compatible `http://127.0.0.1:20128/v1`); prototipe lama memakai `cmc/moonshotai/Kimi-K2.5` dengan cadangan `cmc/moonshotai/Kimi-K2.7-Code-Highspeed`. Alternatif: **Command Code Provider API** (`https://api.commandcode.ai/provider/v1`) kalau plan-nya bukan "Go" | Hasil uji 12 model × 3 skenario: Kimi-class paling cepat (1,8 / 2,1 / 2,1 detik), Kimi-K2.6 paling lambat (7,0 / 8,8 / 4,4). Command Code **tidak punya model suara** (93 model, semuanya teks) — jadi jalur teks dan suara memang terpisah |
 | **Data yang dikirim ke AI** | Demo dan pengembangan memakai **data sintetis**; keluhan pasien nyata tidak dikirim mentah ke penyedia AI | Data pada free tier boleh dipakai penyedia untuk perbaikan produk, sedangkan rekam medis sensitif (aturan di `AGENTS.md`) |
 
@@ -66,14 +66,17 @@ Butuh keputusan tim:
     `http://localhost:8000/auth/google/callback`.
 11. **Gambar QR untuk diunduh/dicetak** belum ada — butuh persetujuan paket
     pembuat QR. Setelah itu baru bisa masuk ke desain kartu pasien.
-12. **Cloud Billing project `ai-appointment` belum dipastikan aktif.** Langganan
-    **Google AI Pro** hanya menaikkan kuota di **AI Studio (browser)** — dokumentasi
-    resmi Gemini API menyatakan manfaatnya untuk developer "apply only within the
-    Google AI Studio web interface", sementara pemakaian API key/aplikasi "billed and
-    managed separately". Yang bisa membantu aplikasi kita: kredit Cloud bulanan dari
-    **Google Developer Program** (tersedia kalau project punya Cloud Billing aktif),
-    yang boleh dipakai untuk Gemini API. Kalau tidak aktif: jalur utama suara =
-    browser STT/TTS (bebas kuota), Gemini Live jadi opsi tambahan.
+12. **Billing project `ai-appointment` — ditunda (keputusan sementara Jian).**
+    Untuk sekarang proyek memakai **free tier** Gemini; tim akan memutuskan nanti
+    apakah perlu mengaktifkan billing/kredit. Konsekuensi yang harus diingat:
+    kuota free tier ketat untuk model **preview** seperti Live native audio, dan
+    **data free tier boleh dipakai Google untuk perbaikan produk** → demo wajib
+    memakai data sintetis. Karena itu jalur suara bebas kuota (TTS/STT bawaan
+    browser + Groq Whisper) dibangun sebagai tulang punggung, bukan cadangan
+    belaka. Bila billing nanti aktif: kredit bulanan **Google Developer Program**
+    (manfaat langganan Google AI Pro) boleh dipakai untuk Gemini API. Catatan
+    resmi: manfaat AI Pro untuk developer hanya berlaku di UI AI Studio,
+    sedangkan pemakaian API key/aplikasi "billed and managed separately".
 13. **Prefix `cmc/` di 9Router** diduga berasal dari langganan **Command Code**
     (katalognya sama: Kimi, DeepSeek V4.1 Flash, Qwen 3.7 Plus, MiniMax M3, GLM-5.2,
     MiMo, Nemotron). Perlu dikonfirmasi Jian; saat diperiksa 9Router sedang tidak
