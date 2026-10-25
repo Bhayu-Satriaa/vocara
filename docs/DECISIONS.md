@@ -77,10 +77,13 @@ Butuh keputusan tim:
     (manfaat langganan Google AI Pro) boleh dipakai untuk Gemini API. Catatan
     resmi: manfaat AI Pro untuk developer hanya berlaku di UI AI Studio,
     sedangkan pemakaian API key/aplikasi "billed and managed separately".
-13. **Prefix `cmc/` di 9Router** diduga berasal dari langganan **Command Code**
-    (katalognya sama: Kimi, DeepSeek V4.1 Flash, Qwen 3.7 Plus, MiniMax M3, GLM-5.2,
-    MiMo, Nemotron). Perlu dikonfirmasi Jian; saat diperiksa 9Router sedang tidak
-    jalan sehingga belum bisa dibuktikan lewat `/v1/models`.
+13. **Prefix `cmc/` di 9Router** diduga berasal dari langganan **Command Code**,
+    tapi belum identik: 9Router punya `cmc/xiaomi/mimo-v2.5`, sedangkan katalog
+    Command Code (dicek 25 Okt 2026, 93 model) berisi **MiMo V2.6** —
+    `xiaomi/mimo-v2.6-pro`, `-pro-ultraspeed`, `-flash`. Label kemampuan di halaman
+    model Command Code hanya **Text input / Vision / Reasoning** — tidak ada audio
+    sama sekali, jadi jalur suara memang tidak bisa dari sana. **Perlu konfirmasi
+    Jian** siapa penyedia di balik `cmc/`.
 
 ## Fitur tambahan yang pernah diusulkan (belum diputuskan)
 
