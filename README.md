@@ -8,8 +8,10 @@ untuk mempercepat registrasi dan check-in.
 Stack: **Laravel 13** (PHP) + Blade + **Tailwind CSS**, database **MySQL**
 (InnoDB, utf8mb4).
 
-> **Status: tahap dokumen + skeleton Laravel.** Belum ada fitur yang dikoding di luar
-> skeleton bawaan Laravel.
+> **Status: fitur pertama sudah jalan.** Yang ada sekarang: login staf multi-role
+> (email + password, akun dibuat admin), middleware pembatas role, dan dashboard
+> terpisah per role. Modul klinik (data pasien, QR, kunjungan, pemeriksaan dokter,
+> farmasi, kasir) belum dibuat.
 
 ## Fitur ringkas
 
@@ -58,6 +60,20 @@ php artisan test        # pakai SQLite :memory:, tidak butuh MySQL
 Skema yang sama juga tersedia sebagai SQL mentah — `klinik_schema.sql`
 (`mysql -u root < klinik_schema.sql`), berguna kalau ingin melihat atau
 menggambar ERD-nya.
+
+## Akun demo (hasil seeder)
+
+`php artisan migrate:fresh --seed` mengisi data master dan akun berikut — semua
+password awalnya `password`, ganti setelah dipakai:
+
+- `admin@klinik.test` — role `admin`
+- `dokter.ayu@klinik.test`, `dokter.beni@klinik.test`, `dokter.citra@klinik.test` — role `dokter`
+
+Isi data master: 3 poli, 3 dokter, 15 jadwal praktik (Senin–Jumat, slot 30 menit),
+6 layanan, 5 obat, 8 kode ICD-10.
+
+Akun **pasien** tidak dibuat lewat seeder: pasien mendaftar sendiri lewat Google
+(modulnya belum dikerjakan). Halaman login `/login` khusus staf.
 
 ## Dokumen
 
