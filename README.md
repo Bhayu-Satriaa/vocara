@@ -146,5 +146,6 @@ Back office dibuat dengan **Filament v5** di `/admin`:
 | `docs/DATABASE.md` | kelompok tabel, relasi inti, konvensi data |
 | `docs/DECISIONS.md` | keputusan yang sudah final dan yang masih terbuka |
 | `docs/BRANCHING.md` | aturan branch, PR, dan zona rawan konflik untuk kerja kelompok |
+| `docs/DAFTAR-FITUR.md` | daftar fitur + status, untuk dibahas dengan dosen pembimbing |
 | `klinik_schema.sql` | skema database lengkap |
 | `docs/boost-guidelines.md` | panduan setup Laravel Boost bawaan skeleton (referensi tooling) |
