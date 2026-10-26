@@ -8,11 +8,13 @@ untuk mempercepat registrasi dan check-in.
 Stack: **Laravel 13** (PHP) + Blade + **Tailwind CSS**, database **MySQL**
 (InnoDB, utf8mb4).
 
-> **Status: alur login + panel admin sudah jalan.** Yang ada sekarang: login staf
-> multi-role (email + password), login pasien lewat **Google OAuth**, halaman
-> Lengkapi Profil (nomor WA wajib) + kartu QR pasien, dan **panel admin Filament**
-> di `/admin` (mulai dari resource akun staf). Modul klinik (kunjungan, pemeriksaan
-> dokter, farmasi, kasir) belum dibuat.
+> **Status: alur login, panel admin, dan scan QR sudah jalan.** Yang ada sekarang:
+> login staf multi-role (email + password), login pasien lewat **Google OAuth**,
+> halaman Lengkapi Profil (nomor WA wajib) + **kartu QR pasien dengan gambar QR**,
+> **panel admin Filament** di `/admin` (mulai dari resource akun staf), dan
+> **halaman scan QR petugas** di `/petugas/scan` (cari pasien dari token QR +
+> verifikasi KTP). Modul klinik lain (janji temu, pemeriksaan dokter, farmasi,
+> kasir) belum dibuat.
 
 ## Fitur ringkas
 
@@ -89,13 +91,35 @@ menggambar ERD-nya.
 password awalnya `password`, ganti setelah dipakai:
 
 - `admin@klinik.test` — role `admin`
+- `petugas@klinik.test` — role `petugas` (dipakai untuk menguji scan QR)
+- `apoteker@klinik.test` — role `apoteker`
 - `dokter.ayu@klinik.test`, `dokter.beni@klinik.test`, `dokter.citra@klinik.test` — role `dokter`
 
 Isi data master: 3 poli, 3 dokter, 15 jadwal praktik (Senin–Jumat, slot 30 menit),
 6 layanan, 5 obat, 8 kode ICD-10.
 
-Akun **pasien** tidak dibuat lewat seeder: pasien mendaftar sendiri lewat Google
-(modulnya belum dikerjakan). Halaman login `/login` khusus staf.
+Akun **pasien** tidak dibuat lewat seeder: pasien mendaftar sendiri lewat Google di
+`/auth/google`. Halaman `/login` khusus staf.
+
+## Scan QR pasien (petugas)
+
+Role `petugas` dan `admin` punya halaman `/petugas/scan` (tautan **Scan QR** di
+menu atas):
+
+1. Pasien membuka **Kartu QR** miliknya — gambarnya dibuat paket
+   `simplesoftwareio/simple-qrcode` (format SVG). Isi QR hanya token acak (UUID),
+   bukan NIK atau data medis.
+2. Petugas memindai QR, lalu menempelkan isinya ke form scan. Token yang tidak
+   dikenali ditolak tanpa mencatat apa pun.
+3. Halaman hasil menampilkan data pasien (termasuk NIK untuk dicocokkan dengan KTP)
+   dan tombol **KTP sesuai — tandai terverifikasi** untuk mengubah
+   `patients.verification_status` menjadi `terverifikasi` (mengisi `verified_by`
+   dan `verified_at`).
+4. Setiap pemindaian dicatat di `qr_scan_logs` (kolom `konteks`) dan setiap
+   tindakan tercatat di `activity_logs`.
+
+Pemindai kamera belum dibuat — sementara token diketik/ditempel manual, jadi fitur
+QR sudah bisa diuji penuh tanpa kamera.
 
 ## Panel admin (Filament)
 

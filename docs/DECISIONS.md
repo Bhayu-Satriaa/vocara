@@ -25,7 +25,8 @@ tim membatalkannya secara eksplisit di sini.
 | Konvensi teknis | Migrasi, Eloquent, policy/middleware per role, Blade + Tailwind | Mengikuti konvensi Laravel |
 | Dashboard staf | Back office memakai **Filament v5** di `/admin` (keputusan Jian: "biar cepat, nanti kita redesign") | Menghemat waktu; resource Filament dibatasi per role (`canAccess`), akses panel hanya untuk staf aktif (`canAccessPanel`). Halaman admin Blade lama sudah dihapus. Tampilan masih tema bawaan, redesign menyusul |
 | Format nomor rekam medis | `RM-` + 6 angka urut (`RM-000001`) | Belum ditetapkan di dokumen sumber; dipilih supaya singkat dibaca di kartu pasien dan mudah diurutkan. **Perlu konfirmasi tim.** |
-| Gambar QR pasien | Belum dibuat — sementara halaman kartu QR hanya menampilkan tokennya | Butuh paket pembuat QR (mis. `simplesoftwareio/simple-qrcode`); aturan repo: paket baru harus disetujui seluruh kelompok dulu |
+| Gambar QR pasien | Dibuat dengan paket `simplesoftwareio/simple-qrcode` ^4.2 (format SVG) di halaman Kartu QR | Paket disetujui Jian 26 Okt 2026; sebelumnya ditahan karena aturan "paket baru harus disetujui kelompok". Kartu juga punya tombol cetak (belum ada unduh PNG) |
+| Pemindaian QR petugas | Halaman `/petugas/scan` (role `petugas` + `admin`): tempel token → data pasien → tombol verifikasi KTP. Kamera belum dipakai | Alur ini yang menutup rangkaian QR (kartu pasien → scan petugas → status `terverifikasi`). Setiap scan dicatat di `qr_scan_logs`, tindakan di `activity_logs`. Diuji end-to-end via HTTP nyata, bukan hanya test |
 | Slot jam kunjungan | `visits.jam` (TIME, NOT NULL) + `doctor_schedules.durasi_slot` (menit, default 30) | Booking harus punya jam, bukan hanya tanggal. Backend yang menghitung pilihan jam dari `jam_mulai`, `jam_selesai`, dan `durasi_slot` — bukan model AI |
 | Anti double-booking | Ditegakkan database: `UNIQUE uq_slot_dokter (doctor_id, tgl_kunjungan, jam, slot_aktif)`; `slot_aktif` kolom generated yang bernilai NULL bila status `batal` | Jadwal bentrok tidak boleh bergantung pada pengecekan `if` di aplikasi. Kunjungan batal tetap menyimpan riwayat, tapi slotnya bebas dipesan ulang |
 | **Suara (AI speech)** | **Gemini Live API native audio** — model `models/gemini-2.5-flash-native-audio-preview-12-2025`, suara `Kore` — sebagai jalur utama; **cadangan bebas kuota**: TTS/STT bawaan browser (`speechSynthesis`, `SpeechRecognition`) dan Groq Whisper untuk dikte | Sudah terbukti jalan di prototipe lama (`Politani/Semester 3/PBL - Appointment AI/poc`): speech-to-speech native, bukan STT+TTS terpisah. **Sementara ini memakai free tier** (billing/kredit ditunda — lihat "Masih terbuka" no. 12), jadi jalur cadangan bebas kuota wajib tetap dibangun, bukan opsional |
@@ -59,13 +60,15 @@ Butuh keputusan tim:
    "Composer detected issues in your platform"). Yang bisa dipakai sekarang:
    `C:\php\php.exe` (PHP 8.5.6, sudah ada di PATH Windows). Pilihan: pasang PHP 8.4
    di Laragon, atau semua perintah artisan dijalankan lewat `C:\php\php.exe`.
-10. **Kredensial Google OAuth** (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
-    `GOOGLE_REDIRECT_URI`) belum diisi, jadi tombol "Masuk dengan Google" masih
-    memutar balik ke halaman login dengan pesan yang jelas. Harus dibuatkan OAuth
-    Client (tipe Web application) di Google Cloud Console, redirect URI
-    `http://localhost:8000/auth/google/callback`.
-11. **Gambar QR untuk diunduh/dicetak** belum ada — butuh persetujuan paket
-    pembuat QR. Setelah itu baru bisa masuk ke desain kartu pasien.
+10. ~~**Kredensial Google OAuth** belum diisi~~ → **sudah diisi** di `.env`
+    (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`), OAuth
+    Client tipe Web application dengan redirect URI
+    `http://localhost:8000/auth/google/callback`. Login Google pasien sudah
+    dipakai sungguhan (akun pasien pertama: `RM-000001`).
+11. ~~**Gambar QR untuk diunduh/dicetak** belum ada~~ → **selesai**: paket
+    `simplesoftwareio/simple-qrcode` dipasang dengan persetujuan Jian (26 Okt 2026),
+    kartu QR pasien menampilkan QR SVG + tombol cetak. Belum ada tombol unduh PNG
+    dan belum ada desain kartu yang dicetak rapi (menyusul).
 12. **Billing project `ai-appointment` — ditunda (keputusan sementara Jian).**
     Untuk sekarang proyek memakai **free tier** Gemini; tim akan memutuskan nanti
     apakah perlu mengaktifkan billing/kredit. Konsekuensi yang harus diingat:
@@ -106,6 +109,7 @@ BPJS/asuransi, audit trail dan consent pasien untuk penggunaan data oleh AI.
 2. ~~Kode Socialite + halaman Lengkapi Profil~~ — **selesai** (login Google pasien
    sudah diuji dengan akun sungguhan).
 3. **Pembagian tugas kelompok** — belum.
-4. Fase berikutnya sesuai `docs/FEATURES.md`: modul petugas (verifikasi KTP + scan QR
-   check-in) → janji temu/kunjungan → pemeriksaan dokter → farmasi → kasir → data
+4. Fase berikutnya sesuai `docs/FEATURES.md`: ~~modul petugas (verifikasi KTP + scan
+   QR check-in)~~ **scan QR + verifikasi KTP sudah jadi** (26 Okt 2026) → lanjut
+   **janji temu/kunjungan**, lalu pemeriksaan dokter → farmasi → kasir → data
    master + statistik admin → terakhir chatbot lalu AI speech.
