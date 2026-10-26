@@ -27,12 +27,25 @@
                 </div>
             </dl>
 
-            <p class="mb-2 text-xs text-slate-500">Token QR (isinya token acak — bukan NIK, bukan data medis):</p>
-            <p class="break-all rounded-md bg-slate-50 px-3 py-2 font-mono text-sm">{{ $pasien->qr_token }}</p>
+            <div class="mb-4 flex justify-center rounded-md bg-white p-3">
+                {{-- Isi QR = token acak UUID. NIK dan data medis tidak boleh masuk QR. --}}
+                {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+                    ->size(220)
+                    ->margin(1)
+                    ->generate($pasien->qr_token) !!}
+            </div>
 
-            <p class="mt-4 text-xs text-slate-400">
-                Gambar QR untuk diunduh dan dicetak belum dibuat: butuh paket pembuat QR yang harus
-                disetujui tim dulu. Sementara ini tunjukkan tokennya ke petugas.
+            <p class="mb-2 text-xs text-slate-500">Token QR (isinya token acak — bukan NIK, bukan data medis):</p>
+            <p class="break-all rounded-md bg-slate-50 px-3 py-2 font-mono text-xs">{{ $pasien->qr_token }}</p>
+
+            <button type="button" onclick="window.print()"
+                    class="mt-4 rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">
+                Cetak kartu
+            </button>
+
+            <p class="mt-3 text-xs text-slate-400">
+                QR dibuat oleh paket <span class="font-mono">simplesoftwareio/simple-qrcode</span> (disetujui Jian).
+                Petugas memindainya di halaman <span class="font-mono">/petugas/scan</span>.
             </p>
         </div>
 
