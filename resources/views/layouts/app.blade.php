@@ -18,6 +18,9 @@
                 </div>
                 <nav class="flex items-center gap-4 text-sm">
                     <a href="{{ route('dashboard') }}" class="hover:underline">Dashboard</a>
+                    @if (auth()->user()->punyaRole('petugas', 'admin'))
+                        <a href="{{ route('petugas.scan') }}" class="hover:underline">Scan QR</a>
+                    @endif
                     @if (auth()->user()->punyaRole('admin'))
                         <a href="{{ url('/admin') }}" class="hover:underline">Panel admin</a>
                     @endif

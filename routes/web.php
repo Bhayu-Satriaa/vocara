@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Pasien\KartuQrController;
 use App\Http\Controllers\Pasien\ProfilController;
+use App\Http\Controllers\Petugas\PemindaianQrController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -35,6 +36,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/kartu-qr', [KartuQrController::class, 'tampil'])
             ->middleware('profil')
             ->name('pasien.qr');
+    });
+    Route::middleware('role:petugas,admin')->prefix('petugas')->name('petugas.')->group(function () {
+        // Scan kartu QR pasien: cari data, catat scan, verifikasi KTP.
+        Route::get('/scan', [PemindaianQrController::class, 'form'])->name('scan');
+        Route::post('/scan', [PemindaianQrController::class, 'cari'])->name('scan.cari');
+        Route::get('/scan/{pasien}', [PemindaianQrController::class, 'hasil'])->name('scan.hasil');
+        Route::post('/scan/{pasien}/verifikasi', [PemindaianQrController::class, 'verifikasi'])->name('scan.verifikasi');
     });
 });
 
