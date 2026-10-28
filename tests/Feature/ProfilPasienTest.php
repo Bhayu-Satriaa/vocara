@@ -16,7 +16,7 @@ class ProfilPasienTest extends TestCase
     {
         return array_merge([
             'nama_lengkap' => 'Budi Santoso',
-            'nik' => '1234567890123456',
+            'hubungan_keluarga' => 'diri sendiri',
             'no_wa' => '081234567890',
             'tgl_lahir' => '1995-05-20',
             'jenis_kelamin' => 'L',
@@ -34,7 +34,6 @@ class ProfilPasienTest extends TestCase
             Patient::query()->create([
                 'user_id' => $user->id,
                 'no_rm' => 'RM-000001',
-                'nik' => '9999999999999999',
                 'nama_lengkap' => 'Sudah Lengkap',
                 'no_wa' => '081200000009',
                 'tgl_lahir' => '1990-01-01',
@@ -86,36 +85,12 @@ class ProfilPasienTest extends TestCase
         $this->assertDatabaseCount('patients', 0);
     }
 
-    public function test_nik_harus_16_angka(): void
-    {
-        $this->actingAs($this->pasien())
-            ->put(route('pasien.profil.simpan'), $this->dataProfil(['nik' => '123']))
-            ->assertSessionHasErrors('nik');
-    }
-
-    public function test_nik_yang_sudah_terdaftar_ditolak(): void
-    {
-        Patient::query()->create([
-            'no_rm' => 'RM-000009',
-            'nik' => '1111222233334444',
-            'nama_lengkap' => 'Orang Lain',
-            'no_wa' => '081200000001',
-            'tgl_lahir' => '1980-01-01',
-            'jenis_kelamin' => 'P',
-        ]);
-
-        $this->actingAs($this->pasien())
-            ->put(route('pasien.profil.simpan'), $this->dataProfil(['nik' => '1111222233334444']))
-            ->assertSessionHasErrors('nik');
-    }
-
     public function test_perbaikan_profil_tidak_membuat_pasien_kedua(): void
     {
         $user = $this->pasien(true);
 
         $this->actingAs($user)
             ->put(route('pasien.profil.simpan'), $this->dataProfil([
-                'nik' => '9999999999999999',
                 'no_wa' => '081200000999',
             ]))
             ->assertRedirect(route('dashboard'));

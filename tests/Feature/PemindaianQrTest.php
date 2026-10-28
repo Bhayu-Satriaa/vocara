@@ -19,7 +19,6 @@ class PemindaianQrTest extends TestCase
         return Patient::query()->create(array_merge([
             'user_id' => $user->id,
             'no_rm' => 'RM-000001',
-            'nik' => '1234567890123456',
             'nama_lengkap' => 'Budi Santoso',
             'no_wa' => '081234567890',
             'tgl_lahir' => '1995-05-20',
@@ -79,7 +78,7 @@ class PemindaianQrTest extends TestCase
             ->get(route('petugas.scan.hasil', $pasien))
             ->assertOk()
             ->assertSee('RM-000001')
-            ->assertSee('1234567890123456')
+            ->assertSee('Budi Santoso')
             ->assertSee('belum terverifikasi');
     }
 

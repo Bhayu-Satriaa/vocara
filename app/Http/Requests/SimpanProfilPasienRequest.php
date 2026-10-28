@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Patient;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -9,7 +10,16 @@ class SimpanProfilPasienRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->punyaRole('pasien');
+        $user = $this->user();
+
+        if (! $user?->punyaRole('pasien')) {
+            return false;
+        }
+
+        // Data diri yang tersangkut di route harus punya akun yang sedang login.
+        $terikat = $this->route('pasien');
+
+        return ! $terikat instanceof Patient || $terikat->user_id === $user->id;
     }
 
     public function rules(): array
@@ -18,7 +28,9 @@ class SimpanProfilPasienRequest extends FormRequest
             'nama_lengkap' => ['required', 'string', 'max:100'],
             // Nomor WA wajib: diverifikasi petugas, bukan OTP.
             'no_wa' => ['required', 'string', 'min:9', 'max:20', 'regex:/^[0-9+ -]+$/'],
-            'nik' => ['required', 'digits:16', Rule::unique('patients', 'nik')->ignore($this->pasienId())],
+            // Multi-profile: tiap data diri harus jelas pemiliknya (diri sendiri / keluarga).
+            'hubungan_keluarga' => ['required', Rule::in(Patient::HUBUNGAN)],
+            'is_utama' => ['nullable', 'boolean'],
             'tgl_lahir' => ['required', 'date', 'before:today'],
             'jenis_kelamin' => ['required', Rule::in(['L', 'P'])],
             'alamat' => ['nullable', 'string', 'max:500'],
@@ -31,14 +43,7 @@ class SimpanProfilPasienRequest extends FormRequest
         return [
             'no_wa.required' => 'Nomor WA wajib diisi — dipakai untuk konfirmasi jadwal.',
             'no_wa.regex' => 'Nomor WA hanya boleh angka, spasi, +, dan -',
-            'nik.digits' => 'NIK harus 16 angka.',
-            'nik.unique' => 'NIK ini sudah terdaftar di sistem. Hubungi petugas.',
+            'hubungan_keluarga.required' => 'Tentukan dulu data diri ini milik siapa.',
         ];
-    }
-
-    /** Biodata pasien milik akun yang sedang login (kalau sudah ada). */
-    private function pasienId(): ?int
-    {
-        return $this->user()?->patients()->value('id');
     }
 }

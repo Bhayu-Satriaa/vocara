@@ -32,7 +32,7 @@ class User extends Authenticatable implements FilamentUser
         return ['password' => 'hashed', 'is_active' => 'boolean'];
     }
 
-    /** Biodata pasien yang dipegang akun ini (NULL untuk pasien walk-in). */
+    /** Semua data diri yang dipegang akun ini (multi-profile; NULL untuk pasien walk-in). */
     public function patients(): HasMany
     {
         return $this->hasMany(Patient::class);
@@ -50,7 +50,7 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Profil pasien dianggap lengkap kalau biodatanya sudah ada dan nomor WA terisi.
+     * Profil pasien dianggap lengkap kalau ada biodatanya yang bernomor WA terisi.
      * Nomor WA belum diverifikasi OTP — verifikasi nyata dilakukan petugas dengan KTP.
      */
     public function profilLengkap(): bool
@@ -59,6 +59,15 @@ class User extends Authenticatable implements FilamentUser
             ->whereNotNull('no_wa')
             ->where('no_wa', '!=', '')
             ->exists();
+    }
+
+    /**
+     * Data diri yang sedang dipakai akun ini (multi-profile) — dasar kartu QR dan booking.
+     * Kalau belum ada yang ditandai utama, dipakai data diri yang paling awal dibuat.
+     */
+    public function profilAktif(): ?Patient
+    {
+        return $this->patients()->terurut()->first();
     }
 
     /** Staf = semua role selain pasien; hanya staf yang login dengan password. */
