@@ -248,4 +248,44 @@ class MultiprofilPasienTest extends TestCase
             ->assertSee($pasien->no_rm)
             ->assertSee('Tanggal lahir');
     }
+
+    /**
+     * Jalur seeder/import membuat data diri langsung lewat model, bukan lewat form.
+     * Aturan "satu akun hanya punya satu profil aktif" tidak dijaga UNIQUE database
+     * (MySQL tidak punya partial unique index), jadi perilaku model inilah yang diuji.
+     */
+    public function test_pembuatan_langsung_lewat_model_tetap_menyisakan_satu_profil_aktif(): void
+    {
+        $user = $this->akunPasien();
+
+        $pertama = Patient::query()->create([
+            'user_id' => $user->id,
+            'no_rm' => 'RM-000001',
+            'nama_lengkap' => 'Budi Santoso',
+            'no_wa' => '081234567890',
+            'tgl_lahir' => '1995-05-20',
+            'jenis_kelamin' => 'L',
+        ]);
+
+        $kedua = Patient::query()->create([
+            'user_id' => $user->id,
+            'no_rm' => 'RM-000002',
+            'nama_lengkap' => 'Sari Santoso',
+            'hubungan_keluarga' => 'pasangan',
+            'no_wa' => '081299998888',
+            'tgl_lahir' => '1997-01-01',
+            'jenis_kelamin' => 'P',
+        ]);
+
+        $this->assertTrue($pertama->refresh()->is_utama, 'data diri pertama otomatis aktif');
+        $this->assertFalse($kedua->refresh()->is_utama, 'data diri kedua tidak mencuri status aktif');
+        $this->assertSame(1, $user->patients()->where('is_utama', true)->count());
+
+        // Memindahkan profil aktif dua kali berturut-turut tidak boleh menyisakan dua.
+        $kedua->jadikanUtama();
+        $kedua->jadikanUtama();
+
+        $this->assertSame(1, $user->patients()->where('is_utama', true)->count());
+        $this->assertSame($kedua->id, $user->refresh()->profilAktif()->id);
+    }
 }
