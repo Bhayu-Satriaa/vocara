@@ -23,6 +23,7 @@
                     @endif
                     @if (auth()->user()->punyaRole('admin'))
                         <a href="{{ url('/admin') }}" class="hover:underline">Panel admin</a>
+                        <a href="{{ route('admin.persetujuan-profil.index') }}" class="hover:underline">Persetujuan Profil</a>
                     @endif
                     @if (auth()->user()->punyaRole('pasien'))
                         <a href="{{ route('pasien.profil') }}" class="hover:underline">Profil</a>
