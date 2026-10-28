@@ -34,7 +34,7 @@ skema di `klinik_schema.sql`.
 
 ```
 FASE 0 (fondasi) ✅
-   └── FASE 1 multi profil (Ridwan) ──┐        [Juli: token design, paralel]
+   └── FASE 1 multi profil (Ridwan) ✅ ──┐        [Juli: token design, paralel]
                                        ├── FASE 2 janji temu/booking (Nabil)
                                        │        └── FASE 3 antrean & check-in petugas
                                        │                 └── FASE 4 pemeriksaan dokter (SOAP)
@@ -62,30 +62,42 @@ aturan branch & PR, daftar fitur. **42 test lulus (143 assertion).**
 
 ## FASE 1 — Multi profil (1 akun, banyak biodata) — **Ridwan**, dibarengi design — **Juli**
 
+**Status: ✅ selesai di `main` (27 Okt 2026).** Migrasi
+`2026_10_27_1000024_ubah_patients_untuk_multiprofil` + `2026_10_27_1000025_hapus_nik_dari_patients`,
+13 test di `MultiprofilPasienTest`, total **53 test lulus (205 assertion)**. Sisa: seeder akun demo
+≥2 data diri, lalu tag `v0.2-multiprofil`.
+
 **Tujuan:** satu akun Google bisa menampung beberapa anggota keluarga; tiap profil punya
 identitas, nomor RM, dan QR sendiri (mirip fitur "keluarga" di Mobile JKN).
 
 **Prasyarat:** FASE 0.
 
-**Isi teknis:**
+**Isi teknis (yang benar-benar dikerjakan):**
 - Migrasi baru (jangan edit migrasi lama):
-  - lepas `UNIQUE` pada `patients.user_id` → `$table->dropUnique(['user_id'])`;
-  - tambah kolom hubungan keluarga: mis. `hubungan` (diri sendiri/istri/anak/…),
-    `is_profil_utama` (boolean, satu per akun), opsional `kepala_keluarga_id`;
-  - `qr_token`, `no_rm`, `nik` tetap unik **per profil** (sudah benar di skema).
-- **"Profil aktif"** disimpan di session (mis. `pasien_aktif_id`) supaya kartu QR, booking,
-  dan riwayat tahu profil mana yang dipakai.
+  - lepas `UNIQUE` pada `patients.user_id` → `$table->dropUnique(['user_id'])`, diganti indeks
+    `idx_patients_user` (InnoDB butuh indeks berkolom pertama `user_id` untuk `fk_patients_user`);
+  - tambah `patients.is_utama` (boolean, satu per akun) dan `patients.hubungan_keluarga`
+    (enum: diri sendiri/pasangan/anak/orang tua/saudara/lainnya);
+  - `kepala_keluarga_id` **tidak dibuat** — belum ada kebutuhan yang menuntut hierarki itu.
+- **NIK dihapus dari sistem** (keputusan tim 27 Okt 2026, dicatat di `DECISIONS.md`), jadi pembeda
+  antar data diri hanya `patients.no_rm` (NOT NULL + UNIQUE, diisi otomatis oleh model). Aturan
+  "NIK unik per profil" karena itu tidak berlaku lagi.
+- **"Profil aktif" disimpan di database** (`patients.is_utama`), bukan di session: kartu QR,
+  booking, dan riwayat membaca `User::profilAktif()`. Satu `is_utama` per akun dijaga aplikasi
+  (`Patient::jadikanUtama()`), bukan UNIQUE database — MySQL tidak punya partial unique index.
 - Route di `routes/pasien.php`: daftar profil, tambah profil, ubah profil, ganti profil aktif.
-- Enam titik kode yang sekarang mengasumsikan satu pasien per akun harus ikut diubah:
-  `User::profilLengkap()`, `PastikanProfilLengkap`, `GoogleController` (arahkan ke pemilihan
-  profil), `ProfilController`, `KartuQrController` (`firstOrFail`), `DashboardController`,
-  plus `SimpanProfilPasienRequest` (validasi NIK unik harus mengabaikan profil yang sedang
-  diedit, bukan profil pertama).
-- Test baru: satu akun dua profil; NIK tetap unik antar profil; tiap profil punya `qr_token`
-  berbeda; kartu QR menampilkan profil aktif; petugas tetap bisa memindai QR profil siapa pun.
+- Titik kode yang dulu mengasumsikan satu pasien per akun sudah ikut: `User::profilLengkap()`
+  (sekarang artinya "ada data diri yang bernomor WA"), `PastikanProfilLengkap`, `GoogleController`
+  (arahkan ke halaman profil kalau belum lengkap), `ProfilController`, `KartuQrController`
+  (pakai profil aktif, `firstOrFail` hilang), `DashboardController`, dan
+  `SimpanProfilPasienRequest` (kepemilikan data diri dicek dari akun yang login).
+- Test baru: satu akun dua data diri; data diri baru tidak menggeser profil aktif; pilih profil
+  aktif; tiap data diri punya `no_rm` dan `qr_token` sendiri; kartu QR menampilkan profil aktif;
+  data diri milik akun lain ditolak (403); hubungan keluarga wajib dipilih; kolom `nik` sudah
+  tidak ada di skema.
 
-**Definisi selesai:** akun demo punya ≥2 profil dengan QR berbeda, semua test lulus,
-`docs/DECISIONS.md` mencatat perubahan skema ini.
+**Definisi selesai:** semua test lulus, `docs/DECISIONS.md` mencatat perubahan skema ini.
+Menambah akun demo ≥2 profil (seeder) masih terbuka.
 
 *Titik demo:* tag `v0.2-multiprofil`.
 
@@ -253,8 +265,8 @@ Total ±45–65 hari-orang. Dengan 5 orang bekerja paralel (setelah FASE 1 lewat
 
 - **Modul FASE 3–7 belum ada pemilik** → hambatan terbesar. Selesaikan pembagian tugas
   sebelum FASE 1 selesai, kalau tidak fase-fase itu tidak jalan.
-- **FASE 1 (multi profil) menyentuh kode bersama** → kerjakan lebih dulu, sebelum orang lain
-  membangun di atas asumsi "1 akun = 1 pasien".
+- **FASE 1 (multi profil) menyentuh kode bersama** → ✅ sudah lewat: dikerjakan lebih dulu sebelum
+  orang lain membangun di atas asumsi "1 akun = 1 pasien", jadi FASE 2 boleh mulai sekarang.
 - **Design Juli menyentuh semua halaman** → tetapkan token di `app.css` lebih dulu, lalu
   halaman per halaman; jangan ada redesign besar di akhir.
 - **Kuota AI** (FASE 8–9) → jalur bebas kuota dibangun lebih dulu, Gemini Live sebagai
