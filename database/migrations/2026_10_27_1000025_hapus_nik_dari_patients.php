@@ -11,7 +11,10 @@ return new class extends Migration
      * (`patients.no_rm`, sudah NOT NULL + UNIQUE), jadi kolom nik beserta unique index-nya
      * tidak dipakai lagi.
      *
-     * Nilai NIK lama WAJIB dibackup lebih dulu (langkah manual sebelum migrate), mis.
+     * Backup nilai NIK bersifat opsional dan **tidak dilakukan** di proyek ini: menyimpan
+     * NIK kembali di tabel lain berlawanan dengan keputusan privasi. Kalau sebuah instalasi
+     * tetap butuh nilainya (mis. data produksi), buat backup SEBELUM menjalankan migrasi:
+     *
      * CREATE TABLE patients_nik_backup AS
      *   SELECT id, no_rm, nama_lengkap, nik, updated_at FROM patients;
      */
@@ -30,7 +33,8 @@ return new class extends Migration
     public function down(): void
     {
         // Nilai NIK tidak dapat direkonstruksi otomatis. Kembalikan kolom sebagai
-        // nullable, lalu pulihkan isinya dari patients_nik_backup (lihat docs/DATABASE.md).
+        // nullable; isinya hanya bisa diisi kalau instalasi ini punya backup sendiri
+        // (lihat docs/DATABASE.md — proyek ini tidak membuat backup).
         Schema::table('patients', function (Blueprint $table) {
             $table->char('nik', 16)->nullable()->unique()->after('no_rm');
         });

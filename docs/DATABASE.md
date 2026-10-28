@@ -76,23 +76,22 @@ Kolom `patients.nik` beserta unique index-nya sudah dihapus (migrasi
 `2026_10_27_1000025_hapus_nik_dari_patients`). **Jangan menambahkan kembali** kolom,
 field form, atau validasi NIK.
 
-Nilai NIK lama disimpan sementara di tabel `patients_nik_backup` (dibuat manual sebelum
-migrasi) — hapus tabel itu setelah perubahan dinyatakan aman:
+**Nilai NIK lama tidak dibackup** — nilainya terhapus bersama kolomnya, sesuai
+keputusan "data NIK tidak disimpan". Kalau masih ada database yang belum dimigrasi dan
+nilainya dibutuhkan, ambil dari dump `.sql` yang dibuat **sebelum** migrasi dijalankan;
+sesudah migrasi nilai itu tidak dapat dipulihkan dari sistem.
+
+Kalau migrasi di-rollback (`php artisan migrate:rollback`), kolom `nik` kembali tetapi
+**kosong (nullable)**:
 
 ```sql
--- cek isi backup
-SELECT * FROM patients_nik_backup;
--- hapus backup kalau sudah tidak diperlukan
-DROP TABLE patients_nik_backup;
+-- hanya bisa diisi kalau kamu punya datanya dari sumber lain (mis. dump sebelum migrasi)
+UPDATE patients SET nik = '...' WHERE id = ...;
 ```
 
-Kalau migrasi di-rollback (`php artisan migrate:rollback`), kolom `nik` kembali sebagai
-**nullable** dan isinya harus dipulihkan manual:
-
-```sql
-UPDATE patients p JOIN patients_nik_backup b ON b.id = p.id SET p.nik = b.nik;
-ALTER TABLE patients MODIFY nik CHAR(16) NOT NULL;   -- opsional, setelah semua terisi
-```
+Membuat tabel backup seperti `patients_nik_backup` **hanya masuk akal sebelum** migrasi
+dijalankan, dan untuk proyek ini sengaja tidak dilakukan karena menyimpan NIK kembali
+berlawanan dengan keputusan privasi.
 
 ## ERD
 

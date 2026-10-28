@@ -11,7 +11,7 @@ tim membatalkannya secara eksplisit di sini.
 | Fitur wajib | Chatbot AI **dan** AI Speech (STT dan/atau TTS) | Disepakati tim sebagai pembeda tugas |
 | Tambahan yang diputuskan | QR code pasien | Mempermudah registrasi dan check-in |
 | Login pasien | Google OAuth (Laravel Socialite) + **nomor WA wajib** di profil | Tanpa OTP dulu; WhatsApp belum jadi jalur verifikasi. Middleware memblokir booking & QR sampai profil lengkap |
-| Data NIK pasien | **Tidak disimpan** — kolom `patients.nik` dihapus 27 Okt 2026 | NIK tidak akan dipakai lagi. Pembeda antar data diri pasien hanya **nomor rekam medis** (`patients.no_rm`, unik & dibuat otomatis). Migrasi `2026_10_27_1000025_hapus_nik_dari_patients`; nilai NIK lama dibackup di tabel `patients_nik_backup` |
+| Data NIK pasien | **Tidak disimpan** — kolom `patients.nik` dihapus 27 Okt 2026 | NIK tidak akan dipakai lagi. Pembeda antar data diri pasien hanya **nomor rekam medis** (`patients.no_rm`, unik & dibuat otomatis). Migrasi `2026_10_27_1000025_hapus_nik_dari_patients`; nilai NIK lama **tidak dibackup** (terhapus bersama kolomnya, sesuai niat privasi) — kalau perlu, ambil dari dump yang dibuat sebelum migrasi |
 | Login staf | Email + password, akun **dibuat admin** | Staf tidak mendaftar sendiri dan tidak memakai Google — memisahkan jalur pasien dari jalur internal |
 | Waktu pembuatan QR | **Otomatis saat pasien terdaftar** | Bukan menunggu pemeriksaan pertama; supaya pasien walk-in maupun online langsung punya kartu |
 | Isi QR | Token acak (**UUID**) dari `patients.qr_token` | Data identitas dan data medis tidak boleh masuk QR karena QR mudah difoto/dibagikan. Hasil scan hanya diproses user login berwenang, setiap scan dicatat di `qr_scan_logs` |
