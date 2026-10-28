@@ -29,7 +29,7 @@ class GoogleController extends Controller
 
     public function panggilBalik(): RedirectResponse
     {
-        $akunGoogle = Socialite::driver('google')->user();
+        $akunGoogle = Socialite::driver('google')->stateless()->user();
 
         $user = User::query()->where('google_id', $akunGoogle->getId())->first()
             ?? User::query()->where('email', $akunGoogle->getEmail())->first();
