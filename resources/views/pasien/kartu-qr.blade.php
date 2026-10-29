@@ -35,7 +35,7 @@
                     <dd>
                         @if ($pasien->sudahTerverifikasi())
                             <span class="rounded-full bg-green-soft px-2.5 py-1 text-[11.5px] font-semibold text-green-ink">
-                                Terverifikasi KTP
+                                Data Diri Terverifikasi
                             </span>
                         @else
                             <span class="rounded-full bg-accent-soft px-2.5 py-1 text-[11.5px] font-semibold text-accent">
@@ -70,7 +70,7 @@
 
         @if (! $pasien->sudahTerverifikasi())
             <div class="mt-4 rounded-[10px] border border-line-soft bg-slate-50 px-4 py-3 text-[13px] text-muted">
-                Data diri kamu sudah <strong class="text-ink">terdaftar</strong> di sistem. Verifikasi KTP akan
+                Data diri kamu sudah <strong class="text-ink">terdaftar</strong> di sistem. Verifikasi Data Diri akan
                 dilakukan petugas loket saat kunjungan pertama dengan mencocokkan data fisik KTP.
             </div>
         @endif

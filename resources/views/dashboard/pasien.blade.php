@@ -37,7 +37,7 @@
                         <div class="mt-2">
                             @if ($pasien->sudahTerverifikasi())
                                 <span class="rounded-full bg-green-soft px-2.5 py-1 text-[11.5px] font-semibold text-green-ink">
-                                    Terverifikasi KTP
+                                    Data Diri Terverifikasi
                                 </span>
                             @else
                                 <span class="rounded-full bg-accent-soft px-2.5 py-1 text-[11.5px] font-semibold text-accent">
@@ -146,9 +146,9 @@
 
                 @if (! $pasien->sudahTerverifikasi())
                     <div class="rounded-[14px] border border-amber-soft bg-amber-soft/60 p-5">
-                        <h3 class="text-sm font-semibold text-amber-ink">Verifikasi KTP Diperlukan</h3>
+                        <h3 class="text-sm font-semibold text-amber-ink">Verifikasi Data Diri Diperlukan</h3>
                         <p class="mt-1 text-[13px] leading-relaxed text-slate-700">
-                            Data diri kamu sudah <strong>terdaftar</strong> di sistem. Verifikasi KTP akan dilakukan
+                            Data diri kamu sudah <strong>terdaftar</strong> di sistem. Verifikasi Data Diri akan dilakukan
                             petugas loket dengan mencocokkan KTP saat kunjungan pertama.
                         </p>
                     </div>
