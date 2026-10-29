@@ -40,7 +40,11 @@ rincian fitur; aturan umum dan konvensi kode ada di `AGENTS.md`.
 
 ## Pasien
 
-- Login Google, lengkapi profil (nomor WA, NIK, tanggal lahir, dll.).
+- Login Google, lengkapi profil (nomor WA, tanggal lahir, alamat, dll.).
+- **Multi-profile**: halaman Profil menampilkan kartu semua data diri milik akun (diri
+  sendiri dan keluarga) plus tombol **Tambah data diri**. Tiap data diri punya nomor
+  rekam medis dan QR sendiri; pasien memilih mana yang **dipakai** (`patients.is_utama`)
+  untuk kartu QR dan booking. Data diri pertama otomatis jadi yang dipakai.
 - QR pribadi dengan status *belum terverifikasi* atau *terverifikasi*; unduh/simpan QR.
 - Booking jadwal dokter, lihat antrean, riwayat kunjungan/resep/tagihan, jadwal praktik.
 - AI chatbot: FAQ, bantu booking, triase awal dan saran poli.
@@ -75,9 +79,9 @@ Dua jalur yang sudah diputuskan sebagai fitur wajib:
 - QR dimiliki **pasien**, dibuat **otomatis saat pasien terdaftar** — bukan setelah
   pemeriksaan pertama.
 - Isi QR hanya **token acak (UUID)** dari `patients.qr_token`. **Jangan** memasukkan
-  NIK atau data medis ke dalam QR.
+  data identitas atau data medis ke dalam QR.
 - QR punya status *belum terverifikasi* → *terverifikasi* setelah petugas
-  mencocokkan KTP.
+  mencocokkan **nama, tanggal lahir, dan alamat** dengan KTP.
 - Hasil scan hanya bisa diproses pengguna yang sudah login dengan role berwenang;
   setiap scan dicatat di `qr_scan_logs`.
 - Dipakai di beberapa titik: check-in petugas, buka rekam medis (dokter), serah obat
@@ -89,7 +93,8 @@ Dua jalur yang sudah diputuskan sebagai fitur wajib:
 
 1. Klik **Masuk dengan Google**; akun dengan role `pasien` dibuat otomatis bila belum ada.
 2. Diarahkan ke halaman **Lengkapi Profil** (middleware memblokir fitur booking dan QR
-   sampai nomor WA terisi).
+   sampai nomor WA terisi). Data diri pertama ini otomatis jadi profil yang dipakai;
+   data diri keluarga bisa ditambahkan kapan saja dari halaman Profil.
 3. QR dibuat otomatis dengan status `belum`.
 4. Saat pertama datang, petugas scan QR dan mencocokkan KTP, lalu status menjadi
    `terverifikasi`.

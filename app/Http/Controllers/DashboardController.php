@@ -22,7 +22,8 @@ class DashboardController extends Controller
         return view("dashboard.{$user->role}", [
             'user' => $user,
             'statistik' => $user->punyaRole('admin') ? $this->statistikAdmin() : [],
-            'pasien' => $user->punyaRole('pasien') ? $user->patients()->first() : null,
+            // Multi-profile: dashboard menampilkan data diri yang sedang dipakai akun ini.
+            'pasien' => $user->punyaRole('pasien') ? $user->profilAktif() : null,
         ]);
     }
 

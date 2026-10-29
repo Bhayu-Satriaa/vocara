@@ -1,92 +1,118 @@
 @extends('layouts.app')
 
-@section('judul', 'Lengkapi Profil')
+@section('judul', $profil->isEmpty() ? 'Lengkapi Profil' : 'Profil')
 
 @section('isi')
-    <div class="mx-auto max-w-xl">
-        <h1 class="mb-1 text-xl font-semibold">Lengkapi profil</h1>
-        <p class="mb-6 text-sm text-slate-500">
-            Nomor WA <strong>wajib</strong> — dipakai untuk konfirmasi jadwal. NIK dipakai petugas untuk
-            mencocokkan identitas dengan KTP saat verifikasi.
-        </p>
-
-        @if ($pasien)
-            <p class="mb-4 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
-                Nomor rekam medis kamu: <strong>{{ $pasien->no_rm }}</strong>
+    @if ($profil->isEmpty())
+        {{-- Belum ada data diri: halaman ini masih jadi langkah "Lengkapi Profil". --}}
+        <div class="mx-auto max-w-xl">
+            <h1 class="mb-1 text-xl font-semibold">Lengkapi profil</h1>
+            <p class="mb-6 text-sm text-slate-500">
+                Nomor WA <strong>wajib</strong> — dipakai untuk konfirmasi jadwal. Nama, tanggal lahir, dan
+                alamat dicocokkan petugas dengan KTP saat verifikasi.
             </p>
-        @endif
 
-        <form method="POST" action="{{ route('pasien.profil.simpan') }}"
-              class="space-y-4 rounded-lg border border-slate-200 bg-white p-6">
-            @csrf
-            @method('PUT')
-
-            <div>
-                <label for="nama_lengkap" class="mb-1 block text-sm font-medium">Nama lengkap (sesuai KTP)</label>
-                <input id="nama_lengkap" name="nama_lengkap" type="text" required
-                       value="{{ old('nama_lengkap', $pasien->nama_lengkap ?? auth()->user()->name) }}"
-                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                @error('nama_lengkap') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-            </div>
-
-            <div>
-                <label for="nik" class="mb-1 block text-sm font-medium">NIK (16 angka)</label>
-                <input id="nik" name="nik" type="text" inputmode="numeric" maxlength="16" required
-                       value="{{ old('nik', $pasien->nik ?? '') }}"
-                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                @error('nik') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-            </div>
-
-            <div>
-                <label for="no_wa" class="mb-1 block text-sm font-medium">Nomor WA aktif</label>
-                <input id="no_wa" name="no_wa" type="text" required
-                       value="{{ old('no_wa', $pasien->no_wa ?? '') }}"
-                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                @error('no_wa') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
+            @include('pasien._form-profil', [
+                'pasien' => null,
+                'aksi' => route('pasien.profil.simpan'),
+                'metode' => 'PUT',
+                'tombol' => 'Simpan profil',
+                'pilihUtama' => false,
+                'namaDefault' => auth()->user()->name,
+                'hubungan' => 'diri sendiri',
+            ])
+        </div>
+    @else
+        <div class="mx-auto max-w-2xl">
+            <div class="mb-4 flex items-start justify-between gap-4">
                 <div>
-                    <label for="tgl_lahir" class="mb-1 block text-sm font-medium">Tanggal lahir</label>
-                    <input id="tgl_lahir" name="tgl_lahir" type="date" required
-                           value="{{ old('tgl_lahir', isset($pasien) ? $pasien->tgl_lahir?->format('Y-m-d') : '') }}"
-                           class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                    @error('tgl_lahir') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    <h1 class="mb-1 text-xl font-semibold">Profil</h1>
+                    <p class="text-sm text-slate-500">
+                        Ada {{ $profil->count() }} data diri di akun ini. Yang bertanda
+                        <strong>dipakai</strong> adalah identitas pada kartu QR dan booking.
+                    </p>
                 </div>
+                <a href="{{ route('pasien.profil.tambah') }}"
+                   class="shrink-0 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">
+                    Tambah data diri
+                </a>
+            </div>
 
-                <div>
-                    <label for="jenis_kelamin" class="mb-1 block text-sm font-medium">Jenis kelamin</label>
-                    <select id="jenis_kelamin" name="jenis_kelamin" required
-                            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                        <option value="L" @selected(old('jenis_kelamin', $pasien->jenis_kelamin ?? '') === 'L')>Laki-laki</option>
-                        <option value="P" @selected(old('jenis_kelamin', $pasien->jenis_kelamin ?? '') === 'P')>Perempuan</option>
-                    </select>
-                    @error('jenis_kelamin') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+            @foreach ($profil as $item)
+                <div class="mb-4 rounded-lg border bg-white p-6 {{ $item->is_utama ? 'border-teal-300' : 'border-slate-200' }}">
+                    <div class="mb-4 flex items-start justify-between gap-4">
+                        <div>
+                            <p class="font-semibold">{{ $item->nama_lengkap }}</p>
+                            <p class="text-xs text-slate-500">
+                                {{ $item->hubungan_keluarga }} &middot; {{ $item->no_rm }}
+                            </p>
+                        </div>
+                        @if ($item->is_utama)
+                            <span class="shrink-0 rounded-md border border-teal-200 bg-teal-50 px-2 py-1 text-xs text-teal-800">
+                                dipakai
+                            </span>
+                        @endif
+                    </div>
+
+                    <dl class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                        <div>
+                            <dt class="text-slate-500">Nomor WA</dt>
+                            <dd>{{ $item->no_wa }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-slate-500">Tanggal lahir</dt>
+                            <dd>{{ $item->tgl_lahir?->format('d-m-Y') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-slate-500">Jenis kelamin</dt>
+                            <dd>{{ $item->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-slate-500">Golongan darah</dt>
+                            <dd>{{ $item->golongan_darah }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-slate-500">Status identitas</dt>
+                            <dd class="font-medium">
+                                {{ $item->sudahTerverifikasi() ? 'terverifikasi' : 'belum terverifikasi' }}
+                            </dd>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <dt class="text-slate-500">Alamat</dt>
+                            <dd>{{ $item->alamat ?: '-' }}</dd>
+                        </div>
+                    </dl>
+
+                    <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
+                        @if ($item->is_utama)
+                            <a href="{{ route('pasien.qr') }}"
+                               class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">
+                                Lihat kartu QR
+                            </a>
+                        @else
+                            <form method="POST" action="{{ route('pasien.profil.pakai', $item) }}">
+                                @csrf
+                                <button type="submit"
+                                        class="rounded-md bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-700">
+                                    Pakai data diri ini
+                                </button>
+                            </form>
+                        @endif
+
+                        <a href="{{ route('pasien.profil.ubah', $item) }}"
+                           class="rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">Ubah</a>
+
+                        @unless ($item->sudahTerverifikasi())
+                            <span class="text-xs text-slate-400">Menunggu verifikasi KTP oleh petugas.</span>
+                        @endunless
+                    </div>
                 </div>
-            </div>
+            @endforeach
 
-            <div>
-                <label for="golongan_darah" class="mb-1 block text-sm font-medium">Golongan darah (opsional)</label>
-                <select id="golongan_darah" name="golongan_darah"
-                        class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                    @foreach (['-' => 'belum tahu', 'A' => 'A', 'B' => 'B', 'AB' => 'AB', 'O' => 'O'] as $nilai => $label)
-                        <option value="{{ $nilai }}" @selected(old('golongan_darah', $pasien->golongan_darah ?? '-') === $nilai)>{{ $label }}</option>
-                    @endforeach
-                </select>
-                @error('golongan_darah') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-            </div>
-
-            <div>
-                <label for="alamat" class="mb-1 block text-sm font-medium">Alamat (opsional)</label>
-                <textarea id="alamat" name="alamat" rows="3"
-                          class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">{{ old('alamat', $pasien->alamat ?? '') }}</textarea>
-                @error('alamat') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-            </div>
-
-            <button type="submit"
-                    class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">
-                Simpan profil
-            </button>
-        </form>
-    </div>
+            <p class="text-xs text-slate-400">
+                Setiap data diri punya nomor rekam medis dan kartu QR sendiri, jadi masing-masing orang
+                tetap punya rekam medis terpisah. Verifikasi identitas dilakukan petugas dengan mencocokkan KTP.
+            </p>
+        </div>
+    @endif
 @endsection

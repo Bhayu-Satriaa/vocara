@@ -11,12 +11,13 @@ tim membatalkannya secara eksplisit di sini.
 | Fitur wajib | Chatbot AI **dan** AI Speech (STT dan/atau TTS) | Disepakati tim sebagai pembeda tugas |
 | Tambahan yang diputuskan | QR code pasien | Mempermudah registrasi dan check-in |
 | Login pasien | Google OAuth (Laravel Socialite) + **nomor WA wajib** di profil | Tanpa OTP dulu; WhatsApp belum jadi jalur verifikasi. Middleware memblokir booking & QR sampai profil lengkap |
-| Data NIK pasien | Disimpan sebagai data profil | Dipakai petugas saat mencocokkan identitas dengan KTP |
+| Data NIK pasien | **Tidak disimpan** — kolom `patients.nik` dihapus 27 Okt 2026 | NIK tidak akan dipakai lagi. Pembeda antar data diri pasien hanya **nomor rekam medis** (`patients.no_rm`, unik & dibuat otomatis). Migrasi `2026_10_27_1000025_hapus_nik_dari_patients`; nilai NIK lama dibackup di tabel `patients_nik_backup` |
 | Login staf | Email + password, akun **dibuat admin** | Staf tidak mendaftar sendiri dan tidak memakai Google — memisahkan jalur pasien dari jalur internal |
 | Waktu pembuatan QR | **Otomatis saat pasien terdaftar** | Bukan menunggu pemeriksaan pertama; supaya pasien walk-in maupun online langsung punya kartu |
-| Isi QR | Token acak (**UUID**) dari `patients.qr_token` | NIK dan data medis tidak boleh masuk QR karena QR mudah difoto/dibagikan. Hasil scan hanya diproses user login berwenang, setiap scan dicatat di `qr_scan_logs` |
-| Status QR | `belum` → `terverifikasi` oleh petugas | Nomor WA belum diverifikasi OTP, jadi verifikasi nyata dilakukan petugas dengan mencocokkan KTP |
+| Isi QR | Token acak (**UUID**) dari `patients.qr_token` | Data identitas dan data medis tidak boleh masuk QR karena QR mudah difoto/dibagikan. Hasil scan hanya diproses user login berwenang, setiap scan dicatat di `qr_scan_logs` |
+| Status QR | `belum` → `terverifikasi` oleh petugas | Nomor WA belum diverifikasi OTP, jadi verifikasi nyata dilakukan petugas dengan mencocokkan **nama, tanggal lahir, dan alamat** dengan KTP |
 | Pasien walk-in | Didaftarkan petugas; `patients.user_id` boleh kosong | Tetap dapat QR; pencarian manual disediakan kalau QR hilang |
+| Multi-profile pasien | Satu akun boleh memegang beberapa data diri (`patients`); `patients.is_utama` menandai yang dipakai untuk kartu QR & booking, `patients.hubungan_keluarga` menjelaskan pemiliknya | Diminta 27 Okt 2026 untuk menitipkan data diri keluarga (anak/pasangan). UNIQUE `patients.user_id` dilepas lewat migrasi `2026_10_27_1000024_ubah_patients_untuk_multiprofil` (diganti indeks `idx_patients_user`). Pembeda antar data diri hanya `patients.no_rm` (unik, dibuat otomatis oleh model); NIK dihapus lewat migrasi `2026_10_27_1000025_hapus_nik_dari_patients`. Hanya satu `is_utama` per akun — dijaga aplikasi (`Patient::jadikanUtama()`), bukan UNIQUE database (MySQL tidak punya partial unique index) |
 | Surat sakit | **Dikesampingkan** | Bukan bagian scope saat ini; jangan ditambahkan kecuali diminta ulang |
 | Harga layanan & obat | Disalin ke `visit_services.harga` dan `prescription_items.harga` saat transaksi | Menjaga riwayat transaksi tetap benar walau tarif master berubah |
 | Input hasil dikte | Ditandai `medical_records.diinput_via_suara` | Jejak asal data untuk audit |
@@ -50,9 +51,9 @@ Butuh keputusan tim:
    doctor_schedules, diseases, medical_record_diagnoses, services, visit_services,
    medicines, prescription_items, chat_conversations). Sementara ini model
    Eloquent-nya memakai `$timestamps = false`; tambah kolomnya kalau tim mau seragam.
-7. **Pasien walk-in tanpa NIK** tidak bisa didaftarkan karena `patients.nik` dan
-   `patients.no_wa` NOT NULL. Perlu keputusan: wajibkan NIK, atau sediakan nilai
-   sementara.
+7. **Pasien walk-in tanpa nomor WA** tidak bisa didaftarkan karena `patients.no_wa`
+   NOT NULL. NIK sudah tidak dipakai (kolomnya dihapus), jadi keputusan soal NIK tidak
+   diperlukan lagi. Perlu keputusan: wajibkan nomor WA, atau sediakan nilai sementara.
 8. **Nomor antrean** (`visits.no_antrian`) belum jelas kapan dibuat — saat booking
    atau saat check-in. `uq_antrian` baru mengikat setelah nomornya terisi.
 9. **PHP untuk Laravel 13.30:** `composer.lock` menuntut PHP **>= 8.4.1**, sedangkan
