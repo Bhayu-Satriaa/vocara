@@ -175,11 +175,11 @@
                                 <dd class="mt-1">
                                     @if ($item->sudahTerverifikasi())
                                         <span class="rounded-full bg-green-soft px-2.5 py-1 text-[11.5px] font-semibold text-green-ink">
-                                            terverifikasi
+                                            Terverifikasi KTP
                                         </span>
                                     @else
-                                        <span class="rounded-full bg-amber-soft px-2.5 py-1 text-[11.5px] font-semibold text-amber-ink">
-                                            belum terverifikasi
+                                        <span class="rounded-full bg-accent-soft px-2.5 py-1 text-[11.5px] font-semibold text-accent">
+                                            Terdaftar
                                         </span>
                                     @endif
                                 </dd>
@@ -212,7 +212,7 @@
                             </a>
 
                             @unless ($item->sudahTerverifikasi())
-                                <span class="text-xs text-faint ml-1">Menunggu verifikasi KTP oleh petugas.</span>
+                                <span class="text-xs text-faint ml-1">Verifikasi KTP dilakukan petugas saat kunjungan pertama.</span>
                             @endunless
                         </div>
                     </div>

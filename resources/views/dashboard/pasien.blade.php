@@ -37,11 +37,11 @@
                         <div class="mt-2">
                             @if ($pasien->sudahTerverifikasi())
                                 <span class="rounded-full bg-green-soft px-2.5 py-1 text-[11.5px] font-semibold text-green-ink">
-                                    terverifikasi
+                                    Terverifikasi KTP
                                 </span>
                             @else
-                                <span class="rounded-full bg-amber-soft px-2.5 py-1 text-[11.5px] font-semibold text-amber-ink">
-                                    belum terverifikasi
+                                <span class="rounded-full bg-accent-soft px-2.5 py-1 text-[11.5px] font-semibold text-accent">
+                                    Terdaftar
                                 </span>
                             @endif
                         </div>
@@ -148,8 +148,8 @@
                     <div class="rounded-[14px] border border-amber-soft bg-amber-soft/60 p-5">
                         <h3 class="text-sm font-semibold text-amber-ink">Verifikasi KTP Diperlukan</h3>
                         <p class="mt-1 text-[13px] leading-relaxed text-slate-700">
-                            Kartu QR kamu masih <strong>belum terverifikasi</strong>. Verifikasi dilakukan petugas
-                            dengan mencocokkan KTP saat kunjungan pertama.
+                            Data diri kamu sudah <strong>terdaftar</strong> di sistem. Verifikasi KTP akan dilakukan
+                            petugas loket dengan mencocokkan KTP saat kunjungan pertama.
                         </p>
                     </div>
                 @endif

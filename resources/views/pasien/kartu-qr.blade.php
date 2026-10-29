@@ -35,11 +35,11 @@
                     <dd>
                         @if ($pasien->sudahTerverifikasi())
                             <span class="rounded-full bg-green-soft px-2.5 py-1 text-[11.5px] font-semibold text-green-ink">
-                                terverifikasi
+                                Terverifikasi KTP
                             </span>
                         @else
-                            <span class="rounded-full bg-amber-soft px-2.5 py-1 text-[11.5px] font-semibold text-amber-ink">
-                                belum terverifikasi
+                            <span class="rounded-full bg-accent-soft px-2.5 py-1 text-[11.5px] font-semibold text-accent">
+                                Terdaftar
                             </span>
                         @endif
                     </dd>
@@ -69,8 +69,9 @@
         </div>
 
         @if (! $pasien->sudahTerverifikasi())
-            <div class="mt-4 rounded-[10px] border border-amber-soft bg-amber-soft/60 px-4 py-3 text-sm text-slate-700">
-                Kartu ini akan diverifikasi petugas saat kamu datang pertama kali (pencocokan KTP).
+            <div class="mt-4 rounded-[10px] border border-line-soft bg-slate-50 px-4 py-3 text-[13px] text-muted">
+                Data diri kamu sudah <strong class="text-ink">terdaftar</strong> di sistem. Verifikasi KTP akan
+                dilakukan petugas loket saat kunjungan pertama dengan mencocokkan data fisik KTP.
             </div>
         @endif
     </div>

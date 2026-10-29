@@ -117,6 +117,6 @@ class ProfilPasienTest extends TestCase
             ->get(route('pasien.qr'))
             ->assertOk()
             ->assertSee($user->patients()->first()->qr_token)
-            ->assertSee('belum terverifikasi');
+            ->assertSee('Terdaftar');  // verification_status='belum' → badge "Terdaftar" (bukan "Terverifikasi KTP")
     }
 }
