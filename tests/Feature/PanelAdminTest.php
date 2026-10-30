@@ -18,6 +18,15 @@ class PanelAdminTest extends TestCase
         $this->get('/admin')->assertRedirect('/admin/login');
     }
 
+    public function test_logout_panel_diarahkan_ke_login_web(): void
+    {
+        $admin = User::factory()->role('admin')->create();
+
+        $this->actingAs($admin)->post('/admin/logout')->assertRedirect(route('login'));
+
+        $this->assertGuest();
+    }
+
     public function test_admin_bisa_membuka_panel(): void
     {
         $admin = User::factory()->role('admin')->create();
