@@ -54,6 +54,7 @@ class MultiprofilPasienTest extends TestCase
     public function test_data_diri_pertama_otomatis_jadi_profil_yang_dipakai(): void
     {
         $user = $this->akunPasien();
+        $admin = User::factory()->role('admin')->create();
 
         $this->actingAs($user)->put(route('pasien.profil.simpan'), [
             'nama_lengkap' => 'Budi Santoso',
@@ -61,7 +62,13 @@ class MultiprofilPasienTest extends TestCase
             'no_wa' => '081234567890',
             'tgl_lahir' => '1995-05-20',
             'jenis_kelamin' => 'L',
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(route('pasien.profil'));
+
+        $pengajuan = $user->profileRequests()->first();
+        $this->assertNotNull($pengajuan);
+
+        // Setelah disetujui admin
+        $this->actingAs($admin)->post(route('admin.persetujuan-profil.approve', $pengajuan));
 
         $this->assertTrue($user->refresh()->profilAktif()?->is_utama, 'data diri pertama ditandai utama');
     }
@@ -88,11 +95,17 @@ class MultiprofilPasienTest extends TestCase
     public function test_pasien_bisa_menambah_data_diri_kedua_tanpa_menggeser_profil_aktif(): void
     {
         [$user, $aktif] = $this->pasienDenganSatuProfil();
+        $admin = User::factory()->role('admin')->create();
 
         $this->actingAs($user)
             ->post(route('pasien.profil.tambah.simpan'), $this->dataDiriBaru())
             ->assertRedirect(route('pasien.profil'))
             ->assertSessionHas('sukses');
+
+        $pengajuan = $user->profileRequests()->where('status', 'menunggu')->firstOrFail();
+
+        // Disetujui admin
+        $this->actingAs($admin)->post(route('admin.persetujuan-profil.approve', $pengajuan));
 
         $baru = $user->patients()->whereKeyNot($aktif->id)->firstOrFail();
 
@@ -100,16 +113,22 @@ class MultiprofilPasienTest extends TestCase
         $this->assertSame(36, strlen($baru->qr_token), 'kartu QR ikut dibuat untuk data diri baru');
         $this->assertFalse($baru->is_utama);
         $this->assertTrue($aktif->refresh()->is_utama);
-        $this->assertDatabaseHas('activity_logs', ['aksi' => 'tambah_data_diri']);
+        $this->assertDatabaseHas('activity_logs', ['aksi' => 'setujui_profil']);
     }
 
     public function test_data_diri_baru_bisa_langsung_dijadikan_profil_aktif(): void
     {
         [$user, $aktif] = $this->pasienDenganSatuProfil();
+        $admin = User::factory()->role('admin')->create();
 
         $this->actingAs($user)
             ->post(route('pasien.profil.tambah.simpan'), $this->dataDiriBaru(['is_utama' => '1']))
             ->assertRedirect(route('pasien.profil'));
+
+        $pengajuan = $user->profileRequests()->where('status', 'menunggu')->firstOrFail();
+
+        // Disetujui admin
+        $this->actingAs($admin)->post(route('admin.persetujuan-profil.approve', $pengajuan));
 
         $this->assertSame('Sari Santoso', $user->refresh()->profilAktif()->nama_lengkap);
         $this->assertFalse($aktif->refresh()->is_utama, 'profil lama dilepas');

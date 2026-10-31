@@ -6,4 +6,89 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Token desain (dipakai sebagai class Tailwind, mis. bg-canvas / border-line).
+       Daftar & aturannya ada di docs/Design.md — ubah di sini saja, jangan hex lepas. */
+    --color-canvas: #f5f7fa;
+    --color-surface: #ffffff;
+    --color-line: #e6eaf1;
+    --color-line-soft: #eef1f6;
+    --color-ink: #0f172a;
+    --color-muted: #64748b;
+    --color-faint: #94a3b8;
+    --color-primary: #1d4ed8;
+    --color-primary-hover: #1e40af;
+    --color-primary-soft: #e8eefb;
+    --color-accent: #2563eb;
+    --color-accent-soft: #e7eefb;
+    --color-amber-ink: #d97706;
+    --color-amber-soft: #fcf3da;
+    --color-green-ink: #16a34a;
+    --color-green-soft: #e4f4ea;
+    --color-indigo-ink: #4f46e5;
+    --color-indigo-soft: #ececfb;
 }
+
+/* Sidebar mengecil: state disimpan sebagai atribut <html data-collapsed>, diisi dari
+   localStorage oleh skrip inline di layouts/app.blade.php sebelum paint (tanpa kedip). */
+.sidebar { transition: width .22s ease, padding .22s ease; }
+[data-collapsed] .sidebar { width: 76px; padding-inline: 12px; }
+.main { transition: margin-left .22s ease; }
+[data-collapsed] .main { margin-left: 76px; }
+/* Saat DIBUKA, label jangan langsung keluar: rail masih sempit sehingga teks kepotong
+   dan terlihat patah. visibility+opacity dengan jeda 80ms bikin teks menyusul rail. */
+.sidebar .hide-collapsed { white-space: nowrap; transition: opacity .18s ease .08s, visibility 0s linear .08s; }
+[data-collapsed] .sidebar .hide-collapsed { opacity: 0; visibility: hidden; transition: opacity .1s ease, visibility 0s; }
+
+/* Label "MENU" saat mengecil: tinggi+padding ikut mengecil bersama rail, bukan ditinggalkan
+   (kalau ditinggalkan, jarak logo ke ikon pertama membengkak ~57px dan ikon terlalu turun)
+   dan bukan langsung hilang (akan bikin ikon melompat ke atas). */
+.sidebar .nav-section { overflow: hidden; max-height: 60px;
+    transition: max-height .22s ease, padding .22s ease, opacity .18s ease .08s, visibility 0s linear .08s; }
+[data-collapsed] .sidebar .nav-section { max-height: 0; padding-top: 0; padding-bottom: 0;
+    transition: max-height .22s ease, padding .22s ease, opacity .1s ease, visibility 0s; }
+
+/* Posisi ikon ikut ber-transisi lewat padding. justify-content sengaja tidak dipakai:
+   properti itu tidak bisa dianimasikan sehingga "loncat" saat rail membuka. */
+.sidebar .brand,
+.sidebar .nav-item { transition: padding .22s ease, margin .22s ease,
+    background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease; }
+[data-collapsed] .sidebar .brand { padding-inline: 7px; margin-bottom: 10px; }
+[data-collapsed] .sidebar .nav-item { padding-inline: 17px; }
+/* Label tersembunyi masih mengisi ruang (visibility, bukan display), jadi flexbox bisa
+   mengecilkan ikon SVG sampai lebar 0 — ikon jadi hilang saat sidebar mengecil.
+   flex: none menjaga ikon tetap 18px; sisanya kepotong overflow sidebar. */
+.nav-item svg { flex: none; }
+
+/* ---------- Animasi ----------
+   Hanya dua yang bergerak: (1) transisi perubahan state (hover/focus, sidebar
+   mengecil, tooltip), (2) satu animasi masuk untuk isi halaman. Elemen lain diam.
+   Aturan lengkap: docs/Design.md bagian Animasi. */
+a, button, input, select, textarea {
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+@keyframes isi-masuk { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: no-preference) {
+    main { animation: isi-masuk .25s ease-out both; }
+}
+/* Aksesibilitas: matikan semua gerak untuk pengguna yang meminta reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+/* Tooltip label: hanya dibuat saat sidebar mengecil — kalau tidak dibatasi, tooltip ini
+   muncul di tepi kanan sidebar (terpotong overflow:hidden) dan terlihat seperti garis hitam. */
+[data-collapsed] .nav-item { position: relative; }
+[data-collapsed] .nav-item::after {
+    content: attr(data-label);
+    position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%);
+    background: #0f172a; color: #fff; font-size: 12px; font-weight: 500;
+    padding: 6px 10px; border-radius: 7px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity .15s ease; z-index: 40;
+}
+[data-collapsed] .nav-item:hover::after { opacity: 1; }

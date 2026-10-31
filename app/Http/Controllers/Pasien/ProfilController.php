@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SimpanProfilPasienRequest;
 use App\Models\ActivityLog;
 use App\Models\Patient;
+use App\Models\PatientProfileRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,12 +15,16 @@ class ProfilController extends Controller
 {
     /**
      * Halaman Profil: kartu semua data diri milik akun ini + penanda mana yang sedang
-     * dipakai. Belum ada data diri sama sekali? Halaman ini masih jadi "Lengkapi Profil".
+     * dipakai. Jika belum ada profil yang disetujui, tampilkan info pengajuan atau form "Lengkapi Profil".
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+
         return view('pasien.profil', [
-            'profil' => $request->user()->patients()->terurut()->get(),
+            'profil' => $user->patients()->terurut()->get(),
+            'pengajuanMenunggu' => $user->profileRequests()->where('status', 'menunggu')->latest()->get(),
+            'pengajuanRiwayat' => $user->profileRequests()->whereIn('status', ['disetujui', 'ditolak'])->latest()->limit(5)->get(),
         ]);
     }
 
@@ -29,10 +34,10 @@ class ProfilController extends Controller
         return view('pasien.profil-form', [
             'pasien' => null,
             'judul' => 'Tambah data diri',
-            'catatan' => 'Isi sesuai KTP orang yang mau didaftarkan. Nomor rekam medis dan kartu QR dibuatkan otomatis.',
+            'catatan' => 'Isi sesuai KTP orang yang mau didaftarkan. Pengajuan akan dikirimkan ke admin untuk persetujuan. Nomor rekam medis dan kartu QR akan dibuat otomatis setelah disetujui.',
             'aksi' => route('pasien.profil.tambah.simpan'),
             'metode' => 'POST',
-            'tombol' => 'Simpan data diri',
+            'tombol' => 'Kirim pengajuan ke admin',
             'pilihUtama' => $request->user()->patients()->exists(),
             'namaDefault' => '',
             'hubungan' => null,
@@ -60,30 +65,40 @@ class ProfilController extends Controller
     /**
      * Simpan data diri pertama (langkah "Lengkapi Profil" setelah login Google), atau
      * perbaiki data diri yang sedang dipakai.
+     * Untuk pendaftaran pertama, data dikirim sebagai pengajuan ke admin terlebih dahulu.
      */
     public function update(SimpanProfilPasienRequest $request): RedirectResponse
     {
         $user = $request->user();
         $data = $request->validated();
-        unset($data['is_utama']);  // data diri pertama otomatis jadi yang dipakai
+        unset($data['is_utama']);  // data diri pertama otomatis jadi yang dipakai saat disetujui
 
         $pasien = $user->profilAktif();
 
         if ($pasien) {
             $pasien->update($data);
-        } else {
-            // Nomor rekam medis dan QR diisi otomatis oleh model Patient.
-            $pasien = Patient::query()->create($data + ['user_id' => $user->id]);
+            ActivityLog::catat('ubah_data_diri', "Pasien mengubah data diri {$pasien->nama_lengkap}", $pasien);
+
+            return redirect()
+                ->route('pasien.profil')
+                ->with('sukses', "Data diri {$pasien->nama_lengkap} diperbarui.");
         }
 
-        ActivityLog::catat('lengkapi_profil', 'Pasien melengkapi profil', $pasien);
+        // Pengajuan profil pertama dikirim ke admin
+        $pengajuan = PatientProfileRequest::create($data + [
+            'user_id' => $user->id,
+            'is_utama' => true,
+            'status' => 'menunggu',
+        ]);
+
+        ActivityLog::catat('ajukan_profil', 'Pasien mengajukan profil pertama', $pengajuan);
 
         return redirect()
-            ->route('dashboard')
-            ->with('sukses', "Profil tersimpan. Nomor rekam medis kamu {$pasien->no_rm}.");
+            ->route('pasien.profil')
+            ->with('sukses', 'Pengajuan profil berhasil dikirim ke admin. Mohon menunggu persetujuan admin untuk penerbitan Nomor Rekam Medis dan Kartu QR.');
     }
 
-    /** Multi-profile: tambah data diri kedua dan seterusnya untuk akun yang sama. */
+    /** Multi-profile: tambah data diri kedua dan seterusnya untuk akun yang sama (mengirim permohonan ke admin). */
     public function simpanBaru(SimpanProfilPasienRequest $request): RedirectResponse
     {
         $user = $request->user();
@@ -91,17 +106,17 @@ class ProfilController extends Controller
         $dipakaiSekarang = (bool) ($data['is_utama'] ?? false);
         unset($data['is_utama']);
 
-        $pasien = Patient::query()->create($data + ['user_id' => $user->id]);
+        $pengajuan = PatientProfileRequest::create($data + [
+            'user_id' => $user->id,
+            'is_utama' => $dipakaiSekarang,
+            'status' => 'menunggu',
+        ]);
 
-        if ($dipakaiSekarang) {
-            $pasien->jadikanUtama();
-        }
-
-        ActivityLog::catat('tambah_data_diri', "Pasien menambah data diri {$pasien->nama_lengkap}", $pasien);
+        ActivityLog::catat('ajukan_profil', "Pasien mengajukan data diri {$pengajuan->nama_lengkap} ({$pengajuan->hubungan_keluarga})", $pengajuan);
 
         return redirect()
             ->route('pasien.profil')
-            ->with('sukses', "Data diri {$pasien->nama_lengkap} tersimpan. Nomor rekam medis {$pasien->no_rm}.");
+            ->with('sukses', "Pengajuan data diri {$pengajuan->nama_lengkap} berhasil dikirim ke admin dan sedang menunggu persetujuan.");
     }
 
     /** Perbaiki satu data diri tertentu milik akun ini. */
