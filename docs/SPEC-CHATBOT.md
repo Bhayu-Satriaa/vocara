@@ -17,7 +17,8 @@ dan tanpa kuota. Tahap 2 (jawaban oleh model) dan Tahap 3 (suara/triase) ditulis
 **Tidak termasuk (menyusul):**
 
 - Jawaban yang dirumuskan model AI (Tahap 2, lewat 9Router).
-- Tool "buat janji temu" — **menunggu `BookingService`** (FASE 2, wilayah Nabil).
+- Tool "buat janji temu" — dipisah ke dokumen sendiri: **`docs/SPEC-BOOKING-CHATBOT.md`**
+  (booking lewat chatbot, memakai `BookingService` sebagai satu-satunya pintu booking).
 - Suara: pembacaan jawaban (TTS) dan bicara ke chatbot (STT) — Tahap 3.
 - Triase otomatis + ringkasan untuk dokter (mengisi `triage_results`) — Tahap 3.
 
