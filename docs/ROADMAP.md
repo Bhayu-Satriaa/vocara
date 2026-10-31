@@ -35,6 +35,25 @@ status oleh admin, resep dokter = teks bebas, manajemen stok obat ditunda, NIK d
 6. `docs/DECISIONS.md` dan `README.md` diperbarui kalau ada keputusan/cara pakai baru.
 7. PR di-approve dan di-merge ke `main`.
 
+## Papan status (per 31 Okt 2026)
+
+- **FASE 0 fondasi** — ✅ selesai. 29 migrasi, 37 FK, 23 model, QR + scan petugas.
+- **FASE 1 multi profil** — ✅ selesai di `main`. 59 test (253 assertion); sisa seeder demo ≥2 data diri + tag `v0.2-multiprofil`.
+- **Design (Juli, paralel)** — ✅ token Hangat + `docs/Design.md` sudah di `main`; poles per halaman ikut fase masing-masing.
+- **FASE 2 janji temu/booking** — 🔜 belum mulai (Nabil). Jalur kritis.
+- **FASE 3 antrean & check-in petugas** — ❓ belum ada pemilik.
+- **FASE 4 pemeriksaan dokter (SOAP)** — ❓ belum ada pemilik.
+- **FASE 5 farmasi (serah obat)** — ❓ belum ada pemilik.
+- **FASE 6 pembayaran & kwitansi (admin)** — ❓ belum ada pemilik.
+- **FASE 7 admin: data master + statistik** — ❓ belum ada pemilik.
+- **FASE 8 chatbot AI** — 🔜 belum mulai (Jian).
+- **FASE 9 AI speech** — 🔜 belum mulai (Jian), setelah FASE 8.
+- **FASE 10 finalisasi & demo** — 🔜 belum mulai (semua).
+
+✅ selesai & sudah di `main` · 🚧 sedang dikerjakan · 🔜 belum mulai (pemilik ada) · ❓ belum ada pemilik.
+Papan ini yang pertama diperbarui setiap ada fase/tugas selesai; statusnya harus cocok dengan
+judul fase di bawah.
+
 ## Peta ketergantungan
 
 ```
