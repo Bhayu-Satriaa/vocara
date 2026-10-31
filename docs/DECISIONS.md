@@ -33,6 +33,11 @@ tim membatalkannya secara eksplisit di sini.
 | **Suara (AI speech)** | **Gemini Live API native audio** — model `models/gemini-2.5-flash-native-audio-preview-12-2025`, suara `Kore` — sebagai jalur utama; **cadangan bebas kuota**: TTS/STT bawaan browser (`speechSynthesis`, `SpeechRecognition`) dan Groq Whisper untuk dikte | Sudah terbukti jalan di prototipe lama (`Politani/Semester 3/PBL - Appointment AI/poc`): speech-to-speech native, bukan STT+TTS terpisah. **Sementara ini memakai free tier** (billing/kredit ditunda — lihat "Masih terbuka" no. 12), jadi jalur cadangan bebas kuota wajib tetap dibangun, bukan opsional |
 | **Otak chatbot (teks)** | Model dari **9Router lokal** (endpoint OpenAI-compatible `http://127.0.0.1:20128/v1`); prototipe lama memakai `cmc/moonshotai/Kimi-K2.5` dengan cadangan `cmc/moonshotai/Kimi-K2.7-Code-Highspeed`. Alternatif: **Command Code Provider API** (`https://api.commandcode.ai/provider/v1`) kalau plan-nya bukan "Go" | Hasil uji 12 model × 3 skenario: Kimi-class paling cepat (1,8 / 2,1 / 2,1 detik), Kimi-K2.6 paling lambat (7,0 / 8,8 / 4,4). Command Code **tidak punya model suara** (93 model, semuanya teks) — jadi jalur teks dan suara memang terpisah |
 | **Data yang dikirim ke AI** | Demo dan pengembangan memakai **data sintetis**; keluhan pasien nyata tidak dikirim mentah ke penyedia AI | Data pada free tier boleh dipakai penyedia untuk perbaikan produk, sedangkan rekam medis sensitif (aturan di `AGENTS.md`) |
+| **Pembayaran** | Berbasis **status**, tanpa integrasi pembayaran. Admin men-toggle `payments.status` (`belum_lunas` / `lunas`) dan `payments.metode` (`transfer` / `cash`); kwitansi tetap dicetak dari `payments.nomor_kwitansi` | Tidak ada payment gateway, verifikasi otomatis, atau pembayaran online. **Sementara** pembayaran dan kwitansi ditangani **admin**, bukan kasir. Tahap `pembayaran` di alur kunjungan tetap ada; kunjungan menjadi `selesai` saat admin menandai `lunas`. Setiap perubahan wajib masuk `activity_logs` (siapa, kapan, dari apa ke apa) karena toggle manual rawan salah input dan tidak ada bukti transfer otomatis |
+| **Manajemen stok obat** | **Dihapus sementara** — stok masuk/keluar, kedaluwarsa, dan stok minimum tidak dicatat | Apoteker hanya menerima daftar obat dari resep dokter (teks), menyiapkan, lalu menyerahkan. Kartu "stok menipis" di dashboard admin ikut dihapus. Batasan yang harus diingat: tanpa stok, apoteker bisa menyerahkan obat yang sebenarnya habis tanpa peringatan. Ini **penundaan, bukan pembatalan permanen** — kalau nanti diaktifkan kembali, dokumen dan migrasi perlu diperbarui |
+| **Resep dokter** | Resep elektronik berupa **teks bebas** (nama obat, dosis, aturan pakai), tidak memilih dari data master obat | Data master obat (`medicines`) dan `medicine_stock_movements` tetap ada di skema tapi **tidak dipakai fitur saat ini**. Catatan teknis: `prescription_items.medicine_id` masih NOT NULL + foreign key, jadi resep teks bebas butuh migrasi sebelum bisa dijalankan |
+| **BPJS/asuransi** | **Tidak dipakai** — aplikasi tidak mencatat data BPJS atau asuransi lain | Bukan bagian scope. Metode pembayaran hanya `transfer` dan `cash` |
+| **AI peringatan interaksi obat** | **Dihapus dari daftar fitur** untuk sekarang | Dengan resep teks bebas, akurasi parsing nama obat rendah, dan mengirim isi resep ke penyedia AI berarti mengirim data medis nyata — bertentangan dengan aturan data sintetis |
 
 ## Masih terbuka
 
@@ -98,8 +103,8 @@ Butuh keputusan tim:
 ## Fitur tambahan yang pernah diusulkan (belum diputuskan)
 
 Ringkasan rekam medis otomatis oleh AI, pengingat otomatis (email/WA), grafik tanda
-vital, telekonsultasi chat sederhana, penjelasan resep dalam bahasa awam, pencatatan
-BPJS/asuransi, audit trail dan consent pasien untuk penggunaan data oleh AI.
+vital, telekonsultasi chat sederhana, penjelasan resep dalam bahasa awam, audit trail
+dan consent pasien untuk penggunaan data oleh AI.
 
 **Hanya masukkan kalau pengguna menyetujui.**
 
@@ -112,5 +117,6 @@ BPJS/asuransi, audit trail dan consent pasien untuk penggunaan data oleh AI.
 3. **Pembagian tugas kelompok** — belum.
 4. Fase berikutnya sesuai `docs/FEATURES.md`: ~~modul petugas (verifikasi KTP + scan
    QR check-in)~~ **scan QR + verifikasi KTP sudah jadi** (26 Okt 2026) → lanjut
-   **janji temu/kunjungan**, lalu pemeriksaan dokter → farmasi → kasir → data
-   master + statistik admin → terakhir chatbot lalu AI speech.
+   **janji temu/kunjungan**, lalu pemeriksaan dokter → farmasi (serah obat) →
+   pembayaran & kwitansi (admin) → data master + statistik admin → terakhir chatbot
+   lalu AI speech. Manajemen stok obat ditunda, bukan dibatalkan.
