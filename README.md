@@ -10,7 +10,8 @@ Stack: **Laravel 13** (PHP) + Blade + **Tailwind CSS**, database **MySQL**
 
 > **Status: alur login, panel admin, dan scan QR sudah jalan.** Yang ada sekarang:
 > login staf multi-role (email + password), login pasien lewat **Google OAuth**,
-> halaman Lengkapi Profil (nomor WA wajib) + **kartu QR pasien dengan gambar QR**,
+> halaman Lengkapi Profil (nomor WA wajib) + **multi-profile data diri** (diri sendiri
+> dan keluarga, bisa dipilih mana yang dipakai) + **kartu QR pasien dengan gambar QR**,
 > **panel admin Filament** di `/admin` (mulai dari resource akun staf), dan
 > **halaman scan QR petugas** di `/petugas/scan` (cari pasien dari token QR +
 > verifikasi KTP). Modul klinik lain (janji temu, pemeriksaan dokter, farmasi,
@@ -18,9 +19,10 @@ Stack: **Laravel 13** (PHP) + Blade + **Tailwind CSS**, database **MySQL**
 
 ## Fitur ringkas
 
-- **Pasien** — login Google, lengkapi profil (nomor WA wajib), QR pribadi, booking
-  jadwal dokter, lihat antrean dan riwayat kunjungan, chatbot (FAQ, bantu booking,
-  triase awal), bicara ke chatbot dan jawabannya dibacakan.
+- **Pasien** — login Google, lengkapi profil (nomor WA wajib), **tambah data diri
+  keluarga dan pilih mana yang dipakai**, QR pribadi, booking jadwal dokter, lihat
+  antrean dan riwayat kunjungan, chatbot (FAQ, bantu booking, triase awal), bicara ke
+  chatbot dan jawabannya dibacakan.
 - **Petugas pendaftaran / kasir** — scan QR untuk check-in, verifikasi identitas
   dengan KTP, daftarkan pasien walk-in, kelola antrean, konfirmasi booking online,
   pembayaran & kwitansi, panggilan antrean lewat suara.
@@ -108,10 +110,11 @@ menu atas):
 
 1. Pasien membuka **Kartu QR** miliknya — gambarnya dibuat paket
    `simplesoftwareio/simple-qrcode` (format SVG). Isi QR hanya token acak (UUID),
-   bukan NIK atau data medis.
+   bukan data identitas atau data medis.
 2. Petugas memindai QR, lalu menempelkan isinya ke form scan. Token yang tidak
    dikenali ditolak tanpa mencatat apa pun.
-3. Halaman hasil menampilkan data pasien (termasuk NIK untuk dicocokkan dengan KTP)
+3. Halaman hasil menampilkan data pasien (nama, tanggal lahir, dan alamat untuk
+   dicocokkan dengan KTP)
    dan tombol **KTP sesuai — tandai terverifikasi** untuk mengubah
    `patients.verification_status` menjadi `terverifikasi` (mengisi `verified_by`
    dan `verified_at`).
@@ -146,5 +149,6 @@ Back office dibuat dengan **Filament v5** di `/admin`:
 | `docs/DATABASE.md` | kelompok tabel, relasi inti, konvensi data |
 | `docs/DECISIONS.md` | keputusan yang sudah final dan yang masih terbuka |
 | `docs/BRANCHING.md` | aturan branch, PR, dan zona rawan konflik untuk kerja kelompok |
+| `docs/DAFTAR-FITUR.md` | daftar fitur + status, untuk dibahas dengan dosen pembimbing |
 | `klinik_schema.sql` | skema database lengkap |
 | `docs/boost-guidelines.md` | panduan setup Laravel Boost bawaan skeleton (referensi tooling) |

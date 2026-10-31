@@ -18,7 +18,7 @@
     <div class="rounded-lg border border-slate-200 bg-white p-6">
         <h2 class="mb-3 font-medium">Yang bisa dikerjakan sekarang</h2>
         <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
-            <li><a class="text-teal-700 hover:underline" href="{{ route('admin.pengguna') }}">Kelola akun staf</a> (buat akun dokter, petugas, apoteker).</li>
+            <li><a class="text-teal-700 hover:underline" href="{{ \App\Filament\Resources\Users\UserResource::getUrl() }}">Kelola akun staf</a> (buat akun dokter, petugas, apoteker) — lewat panel admin.</li>
             <li>Data master (poli, dokter, jadwal, tarif, ICD-10, obat) — modul menyusul.</li>
             <li>Laporan dan ekspor PDF/Excel, log aktivitas — modul menyusul.</li>
         </ul>

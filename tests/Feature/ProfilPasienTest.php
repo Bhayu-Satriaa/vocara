@@ -16,7 +16,7 @@ class ProfilPasienTest extends TestCase
     {
         return array_merge([
             'nama_lengkap' => 'Budi Santoso',
-            'nik' => '1234567890123456',
+            'hubungan_keluarga' => 'diri sendiri',
             'no_wa' => '081234567890',
             'tgl_lahir' => '1995-05-20',
             'jenis_kelamin' => 'L',
@@ -34,7 +34,6 @@ class ProfilPasienTest extends TestCase
             Patient::query()->create([
                 'user_id' => $user->id,
                 'no_rm' => 'RM-000001',
-                'nik' => '9999999999999999',
                 'nama_lengkap' => 'Sudah Lengkap',
                 'no_wa' => '081200000009',
                 'tgl_lahir' => '1990-01-01',
@@ -63,10 +62,20 @@ class ProfilPasienTest extends TestCase
     public function test_pasien_melengkapi_profil_dapat_nomor_rekam_medis_dan_token_qr(): void
     {
         $user = $this->pasien();
+        $admin = User::factory()->role('admin')->create();
 
         $this->actingAs($user)
             ->put(route('pasien.profil.simpan'), $this->dataProfil())
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('pasien.profil'))
+            ->assertSessionHas('sukses');
+
+        $this->assertNull($user->patients()->first(), 'belum masuk ke patients sebelum approve admin');
+
+        $pengajuan = $user->profileRequests()->where('status', 'menunggu')->first();
+        $this->assertNotNull($pengajuan);
+
+        // Disetujui admin
+        $this->actingAs($admin)->post(route('admin.persetujuan-profil.approve', $pengajuan));
 
         $pasien = $user->patients()->first();
 
@@ -74,7 +83,7 @@ class ProfilPasienTest extends TestCase
         $this->assertSame('RM-000001', $pasien->no_rm);
         $this->assertSame(36, strlen($pasien->qr_token), 'token QR berupa UUID 36 karakter');
         $this->assertSame('belum', $pasien->verification_status);
-        $this->assertDatabaseHas('activity_logs', ['aksi' => 'lengkapi_profil']);
+        $this->assertDatabaseHas('activity_logs', ['aksi' => 'setujui_profil']);
     }
 
     public function test_nomor_wa_wajib_diisi(): void
@@ -86,39 +95,15 @@ class ProfilPasienTest extends TestCase
         $this->assertDatabaseCount('patients', 0);
     }
 
-    public function test_nik_harus_16_angka(): void
-    {
-        $this->actingAs($this->pasien())
-            ->put(route('pasien.profil.simpan'), $this->dataProfil(['nik' => '123']))
-            ->assertSessionHasErrors('nik');
-    }
-
-    public function test_nik_yang_sudah_terdaftar_ditolak(): void
-    {
-        Patient::query()->create([
-            'no_rm' => 'RM-000009',
-            'nik' => '1111222233334444',
-            'nama_lengkap' => 'Orang Lain',
-            'no_wa' => '081200000001',
-            'tgl_lahir' => '1980-01-01',
-            'jenis_kelamin' => 'P',
-        ]);
-
-        $this->actingAs($this->pasien())
-            ->put(route('pasien.profil.simpan'), $this->dataProfil(['nik' => '1111222233334444']))
-            ->assertSessionHasErrors('nik');
-    }
-
     public function test_perbaikan_profil_tidak_membuat_pasien_kedua(): void
     {
         $user = $this->pasien(true);
 
         $this->actingAs($user)
             ->put(route('pasien.profil.simpan'), $this->dataProfil([
-                'nik' => '9999999999999999',
                 'no_wa' => '081200000999',
             ]))
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('pasien.profil'));
 
         $this->assertSame(1, $user->patients()->count());
         $this->assertSame('081200000999', $user->patients()->first()->no_wa);
@@ -132,6 +117,6 @@ class ProfilPasienTest extends TestCase
             ->get(route('pasien.qr'))
             ->assertOk()
             ->assertSee($user->patients()->first()->qr_token)
-            ->assertSee('belum terverifikasi');
+            ->assertSee('Terdaftar');  // verification_status='belum' → badge "Terdaftar" (bukan "Terverifikasi KTP")
     }
 }

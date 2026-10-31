@@ -77,7 +77,7 @@ git push -u origin juli/design-login         # lihat bagian 6 soal cara push
 
 ## 5. Yang dicek reviewer
 
-1. `php artisan test` lulus (baseline repo: **42 test** — PR tidak boleh
+1. `php artisan test` lulus (baseline repo: **58 test** — PR tidak boleh
    menurunkannya).
 2. Tidak ada `.env`, `vendor/`, `public/build`, atau data pribadi ikut ter-commit.
 3. Route baru dibatasi role yang benar (`middleware('role:...')`), dan halaman
@@ -122,8 +122,8 @@ Belum ada pemiliknya — perlu keputusan di pertemuan:
 
 - Antrean & check-in petugas (nomor antrean, kunjungan masuk antrean)
 - Pemeriksaan dokter (SOAP, tanda vital, ICD-10, resep)
-- Farmasi & stok obat (termasuk serah obat lewat QR)
-- Kasir / pembayaran (termasuk kwitansi)
+- Farmasi / serah obat lewat QR (tanpa manajemen stok untuk sementara)
+- Pembayaran & kwitansi (admin; status lunas/belum lunas, metode transfer/cash)
 - Data master + statistik admin di panel Filament
 
 ## 8. Penanda demo

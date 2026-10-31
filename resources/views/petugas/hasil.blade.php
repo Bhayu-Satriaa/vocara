@@ -20,10 +20,6 @@
                     <dd class="font-medium">{{ $pasien->nama_lengkap }}</dd>
                 </div>
                 <div>
-                    <dt class="text-slate-500">NIK (cocokkan dengan KTP)</dt>
-                    <dd class="font-mono">{{ $pasien->nik }}</dd>
-                </div>
-                <div>
                     <dt class="text-slate-500">Tanggal lahir</dt>
                     <dd>{{ $pasien->tgl_lahir?->format('d-m-Y') }}</dd>
                 </div>
@@ -61,7 +57,7 @@
                 <form method="POST" action="{{ route('petugas.scan.verifikasi', $pasien) }}" class="mt-6 border-t border-slate-200 pt-5">
                     @csrf
                     <p class="mb-3 text-sm text-slate-600">
-                        Cocokkan NIK, nama, dan tanggal lahir di atas dengan KTP pasien. Tandai terverifikasi hanya
+                        Cocokkan nama, tanggal lahir, dan alamat di atas dengan KTP pasien. Tandai terverifikasi hanya
                         kalau semuanya sesuai.
                     </p>
                     <button type="submit" class="rounded-md bg-emerald-700 px-4 py-2 text-sm text-white hover:bg-emerald-600">
