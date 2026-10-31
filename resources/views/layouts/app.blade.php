@@ -17,6 +17,7 @@
                 ['label' => 'Dashboard', 'href' => route('dashboard'), 'ikon' => 'grid', 'aktif' => request()->routeIs('dashboard')],
             ];
             if (auth()->user()->punyaRole('petugas', 'admin')) {
+                $menu[] = ['label' => 'Pasien Baru', 'href' => route('petugas.pasien.create'), 'ikon' => 'user-plus', 'aktif' => request()->routeIs('petugas.pasien*')];
                 $menu[] = ['label' => 'Scan QR pasien', 'href' => route('petugas.scan'), 'ikon' => 'scan', 'aktif' => request()->routeIs('petugas.scan*')];
             }
             if (auth()->user()->punyaRole('admin')) {
@@ -53,6 +54,9 @@
                         @switch($item['ikon'])
                             @case('grid')
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                            @break
+                            @case('user-plus')
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
                             @break
                             @case('scan')
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M3 12h18"/></svg>
