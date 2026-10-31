@@ -9,6 +9,7 @@ use App\Models\Visit;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -77,7 +78,13 @@ class AsistenChat
                 return $isi === '' ? null : ['isi' => $isi, 'intent' => $intent];
             }
 
-            $pesan[] = $jawaban;
+            // Kirim balik HANYA field yang dikenal API (jangan ikutkan `reasoning_content`):
+            // sebagian gateway menolak pesan assistant dengan field tambahan.
+            $pesan[] = array_filter([
+                'role' => 'assistant',
+                'content' => $jawaban['content'] ?? null,
+                'tool_calls' => $toolCalls,
+            ], fn ($nilai) => $nilai !== null);
 
             foreach ($toolCalls as $panggilan) {
                 $nama = $panggilan['function']['name'] ?? '';
@@ -116,6 +123,13 @@ class AsistenChat
             if ($respon->successful()) {
                 return $respon->json('choices.0.message');
             }
+
+            // Dicatat supaya kegagalan gateway bisa ditelusuri (tanpa menulis kunci).
+            Log::warning('Gateway model menolak permintaan', [
+                'model' => $nama,
+                'status' => $respon->status(),
+                'body' => substr((string) $respon->body(), 0, 300),
+            ]);
         }
 
         return null;
@@ -330,7 +344,9 @@ class AsistenChat
             ['type' => 'function', 'function' => [
                 'name' => 'cek_janji',
                 'description' => 'Daftar janji temu aktif milik data diri yang sedang dipakai.',
-                'parameters' => ['type' => 'object', 'properties' => [], 'required' => []],
+                // `properties` harus dikirim sebagai objek JSON ({}), bukan array ([]) —
+                // kalau array, gateway menolak: "parameters.properties must be an object".
+                'parameters' => ['type' => 'object', 'properties' => (object) []],
             ]],
             ['type' => 'function', 'function' => [
                 'name' => 'batal_janji',
