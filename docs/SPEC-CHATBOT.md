@@ -37,11 +37,18 @@ beserta relasinya (`messages()`, `triageResult()`), jadi tidak perlu model baru.
 
 ## 3. Peran dan hak akses
 
-- **Admin** — membuat/mengubah/menonaktifkan basis pengetahuan; melihat daftar percakapan.
+- **Admin** — **mengelola isi basis pengetahuan**: menambah/mengubah/menonaktifkan
+  pertanyaan & jawaban. Alasan: isi FAQ adalah **informasi operasional** (jam buka,
+  syarat daftar, tarif) yang bisa berubah kapan saja, jadi admin klinik harus bisa
+  menyesuaikannya sendiri tanpa menunggu tim teknis.
   `chatbot_knowledge.updated_by` diisi otomatis dari admin yang menyimpan.
+- **Konfigurasi teknis bot TIDAK diekspos di panel** — pilihan model, system prompt,
+  kunci API, dan batas kuota tetap di `.env`/kode (wilayah tim IT / pengembang).
+  Admin klinik tidak mengurus arsitektur bot; yang dia kelola hanya **kata-kata
+  pertanyaan & jawaban**.
 - **Pasien** — hanya percakapan milik sendiri; hanya profil yang sedang dipakai
   (`profilAktif()`) yang dicatat di `chat_conversations.patient_id`.
-- **Petugas / dokter** — tidak diberi akses di Tahap 1 (lihat bagian 9, butuh keputusan tim).
+- **Petugas / dokter** — tidak diberi akses di Tahap 1 (lihat bagian 9).
 
 ## 4. Alur percakapan
 
@@ -69,9 +76,10 @@ beserta relasinya (`messages()`, `triageResult()`), jadi tidak perlu model baru.
 - **Service** `App\Services\ChatbotService` — logika pencocokan **satu tempat**, supaya
   bisa diuji tanpa HTTP dan nanti dipakai jalur suara (Tahap 3) juga.
 - **Admin** — resource Filament `ChatbotKnowledgeResource` (pola sama seperti
-  `UserResource` yang sudah ada: `canAccess()` khusus role `admin`), plus seeder
-  `ChatbotKnowledgeSeeder` berisi ±8 FAQ contoh (jam buka, syarat daftar, bawa KTP,
-  cara pakai QR, alur pendaftaran, biaya, dsb).
+  `UserResource` yang sudah ada: `canAccess()` khusus role `admin`) berisi **hanya
+  konten**: kategori, pertanyaan, jawaban, aktif/tidak. **Jangan** menaruh pengaturan
+  model/prompt/kunci di sini. Plus seeder `ChatbotKnowledgeSeeder` berisi ±8 FAQ contoh
+  (jam buka, syarat daftar, bawa KTP, cara pakai QR, alur pendaftaran, biaya, dsb).
 - Setelah mengubah Blade: `php artisan view:clear`.
 
 ## 6. Keamanan dan etika
@@ -113,11 +121,14 @@ Test yang harus ada:
 
 ## 9. Masih terbuka (perlu keputusan tim)
 
-1. **Ambang skor** kemiripan dan siapa yang mengisi basis pengetahuan awal (Jian/admin?)
-   — dulu pernah dibahas bahwa admin mengelola basis pengetahuan.
-2. **Retensi riwayat** percakapan: disimpan berapa lama? (`chat_conversations` bisa tumbuh).
-3. **Bolehkah petugas melihat percakapan pasien?** Kalau ya, perlu dasar kewenangan dan
+1. ~~Siapa yang mengelola basis pengetahuan~~ → **diputuskan: admin** (isi FAQ adalah
+   informasi operasional yang bisa berubah, jadi admin harus bisa menyesuaikan sendiri).
+   Sisa yang belum: **ambang skor kemiripan** (usulan: minimal 2 kata kunci cocok).
+2. Apakah **petugas pendaftaran** juga diberi akses melihat/menambah FAQ — mereka yang
+   paling sering ditanya pasien, tapi menambah kolom/aksi berarti menambah luas uji.
+3. **Retensi riwayat** percakapan: disimpan berapa lama? (`chat_conversations` bisa tumbuh).
+4. **Bolehkah petugas melihat percakapan pasien?** Kalau ya, perlu dasar kewenangan dan
    pencatatan audit di `activity_logs`.
-4. **Kapan Tahap 2 (AI) dimulai** dan siapa yang mengisi `LLM_*` di `.env` (nilai gateway
+5. **Kapan Tahap 2 (AI) dimulai** dan siapa yang mengisi `LLM_*` di `.env` (nilai gateway
    9Router) — serta keputusan tetap: demo memakai data sintetis.
-5. Bahasa jawaban: Indonesia baku, singkat (maks ±3 kalimat), tanpa istilah medis rumit.
+6. Bahasa jawaban: Indonesia baku, singkat (maks ±3 kalimat), tanpa istilah medis rumit.
