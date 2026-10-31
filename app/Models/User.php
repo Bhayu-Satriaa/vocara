@@ -38,6 +38,12 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Patient::class);
     }
 
+    /** Permohonan pendaftaran data diri yang diajukan akun ini ke admin. */
+    public function profileRequests(): HasMany
+    {
+        return $this->hasMany(PatientProfileRequest::class);
+    }
+
     /** Profil dokter, terisi hanya untuk role `dokter`. */
     public function doctor(): HasOne
     {
