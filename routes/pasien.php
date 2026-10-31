@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Pasien\ChatController;
 use App\Http\Controllers\Pasien\KartuQrController;
 use App\Http\Controllers\Pasien\ProfilController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,14 @@ Route::middleware(['auth', 'role:pasien'])->group(function () {
     Route::get('/kartu-qr', [KartuQrController::class, 'tampil'])
         ->middleware('profil')
         ->name('pasien.qr');
+
+    // Chatbot dasar (Tahap 1): tanya jawab dari basis pengetahuan, tanpa AI.
+    Route::get('/chat', [ChatController::class, 'index'])
+        ->middleware('profil')
+        ->name('pasien.chat');
+    Route::post('/chat/kirim', [ChatController::class, 'kirim'])
+        ->middleware('profil')
+        ->name('pasien.chat.kirim');
 
     // Booking janji temu dan riwayat kunjungan pasien ditambahkan di sini.
 });

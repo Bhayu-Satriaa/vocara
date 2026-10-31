@@ -31,7 +31,8 @@ class ChatConversation extends Model
 
     public function messages(): HasMany
     {
-        return $this->hasMany(ChatMessage::class);
+        // Kolomnya `conversation_id`, bukan `chat_conversation_id` (nama bawaan Laravel).
+        return $this->hasMany(ChatMessage::class, 'conversation_id');
     }
 
     public function triageResult(): HasOne
