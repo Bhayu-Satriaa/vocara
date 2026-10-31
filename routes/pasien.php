@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Pasien\ChatController;
 use App\Http\Controllers\Pasien\KartuQrController;
 use App\Http\Controllers\Pasien\ProfilController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,15 @@ Route::middleware(['auth', 'role:pasien'])->group(function () {
     Route::get('/kartu-qr', [KartuQrController::class, 'tampil'])
         ->middleware('profil')
         ->name('pasien.qr');
+
+    // Chatbot: dijawab model lewat 9Router; kalau gateway mati, jatuh ke jawaban FAQ
+    // dari basis pengetahuan. Rancangan: docs/SPEC-CHATBOT.md + docs/SPEC-BOOKING-CHATBOT.md
+    Route::get('/chat', [ChatController::class, 'index'])
+        ->middleware('profil')
+        ->name('pasien.chat');
+    Route::post('/chat/kirim', [ChatController::class, 'kirim'])
+        ->middleware('profil')
+        ->name('pasien.chat.kirim');
 
     // Booking janji temu dan riwayat kunjungan pasien ditambahkan di sini.
 });

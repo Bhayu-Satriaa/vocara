@@ -19,6 +19,7 @@ class ChatMessage extends Model
 
     public function conversation(): BelongsTo
     {
-        return $this->belongsTo(ChatConversation::class);
+        // Kolomnya `conversation_id` (lihat ChatConversation::messages()).
+        return $this->belongsTo(ChatConversation::class, 'conversation_id');
     }
 }

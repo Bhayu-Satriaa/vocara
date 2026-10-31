@@ -25,6 +25,20 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
     ],
 
+    /*
+    | Otak chatbot: endpoint OpenAI-compatible. Bawaannya 9Router lokal supaya demo jalan
+    | tanpa mengisi .env; kunci dan nama model bisa ditimpa lewat .env.
+    | Rancangan: docs/SPEC-BOOKING-CHATBOT.md
+    */
+    'llm' => [
+        'base_url' => env('LLM_BASE_URL', 'http://127.0.0.1:20128/v1'),
+        'key' => env('LLM_API_KEY', '9router-lokal'),
+        'model' => env('LLM_MODEL', 'cmc/moonshotai/Kimi-K2.7-Code-Highspeed'),
+        'model_fallback' => env('LLM_MODEL_FALLBACK', 'cmc/zai-org/GLM-5.2-Fast'),
+        'max_tokens' => (int) env('LLM_MAX_TOKENS', 1200),
+        'timeout' => (int) env('LLM_TIMEOUT', 60),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

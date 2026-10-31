@@ -28,6 +28,7 @@
             if (auth()->user()->punyaRole('pasien')) {
                 $menu[] = ['label' => 'Profil', 'href' => route('pasien.profil'), 'ikon' => 'user', 'aktif' => request()->routeIs('pasien.profil*')];
                 $menu[] = ['label' => 'Kartu QR', 'href' => route('pasien.qr'), 'ikon' => 'kartu', 'aktif' => request()->routeIs('pasien.qr')];
+                $menu[] = ['label' => 'Tanya chatbot', 'href' => route('pasien.chat'), 'ikon' => 'chat', 'aktif' => request()->routeIs('pasien.chat*')];
             }
         @endphp
 
@@ -64,6 +65,9 @@
                             @break
                             @case('kartu')
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                            @break
+                            @case('chat')
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H8l-5 3 1.4-4.2A8 8 0 1 1 21 12z"/></svg>
                             @break
                         @endswitch
                         <span class="hide-collapsed">{{ $item['label'] }}</span>
