@@ -8,6 +8,7 @@ use App\Models\Patient;
 use App\Models\Visit;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +33,15 @@ class AsistenChat
     /** Berapa pesan terakhir yang dikirim sebagai konteks. */
     private const KONTEKS_PESAN = 10;
 
+    /** Berapa lama slot yang sudah ditawarkan masih dianggap berlaku. */
+    private const MENIT_TAWARAN = 30;
+
+    /**
+     * Kunci cache tempat slot yang sudah ditawarkan ke pasien disimpan, per percakapan.
+     * Dipakai supaya buat_janji tidak bisa memakai dokter/jam di luar yang ditawarkan.
+     */
+    private ?string $kunciTawaran = null;
+
     public function __construct(private readonly BookingService $booking) {}
 
     /** Ada gateway model yang bisa dipakai? Kalau tidak, chatbot jalan mode FAQ saja. */
@@ -51,6 +61,8 @@ class AsistenChat
         if (! $this->tersedia()) {
             return null;
         }
+
+        $this->kunciTawaran = 'chat.tawaran.'.$percakapan->id;
 
         $pesan = [['role' => 'system', 'content' => $this->promptSistem($pasien)]];
 
@@ -204,6 +216,16 @@ class AsistenChat
 
         $slot = $this->booking->slotTersedia($dokter, $tanggal);
 
+        // Catat slot yang baru ditawarkan ke pasien. buat_janji hanya boleh memakai slot
+        // ini, supaya pasien tidak menyetujui dokter/jam A lalu mendapat B.
+        if ($slot !== [] && $this->kunciTawaran !== null) {
+            Cache::put($this->kunciTawaran, [
+                'dokter_id' => $dokter->id,
+                'tanggal' => $tanggal,
+                'jam' => array_map(fn ($jam) => substr((string) $jam, 0, 5), $slot),
+            ], now()->addMinutes(self::MENIT_TAWARAN));
+        }
+
         return [
             'ok' => true,
             'dokter' => $dokter->user?->name,
@@ -236,6 +258,31 @@ class AsistenChat
             return ['ok' => false, 'pesan' => 'Dokter tidak ditemukan — sebutkan dokter yang dipilih pasien.'];
         }
 
+        // Paku slot: janji hanya boleh dibuat untuk dokter/tanggal/jam yang benar-benar
+        // sudah ditawarkan (lewat cek_jadwal) dan dikonfirmasi pasien.
+        $tawaran = $this->kunciTawaran !== null ? Cache::get($this->kunciTawaran) : null;
+        $jam = substr(trim((string) ($argumen['jam'] ?? '')), 0, 5);
+
+        if (! is_array($tawaran)) {
+            return ['ok' => false, 'pesan' => 'Belum ada slot yang ditawarkan di percakapan ini. Panggil cek_jadwal dulu, tawarkan jam kosongnya ke pasien, tunggu konfirmasi, baru panggil buat_janji.'];
+        }
+
+        if ((int) $tawaran['dokter_id'] !== (int) $dokter->id || $tawaran['tanggal'] !== $tanggal) {
+            return [
+                'ok' => false,
+                'pesan' => 'Dokter atau tanggal berbeda dari yang ditawarkan sebelumnya. Tawarkan pilihan baru ke pasien dan tunggu konfirmasi lagi.',
+                'tawaran_sebelumnya' => $tawaran,
+            ];
+        }
+
+        if (! in_array($jam, $tawaran['jam'], true)) {
+            return [
+                'ok' => false,
+                'pesan' => "Jam {$jam} tidak termasuk jam yang ditawarkan. Tawarkan hanya jam pada tawaran_sebelumnya.",
+                'tawaran_sebelumnya' => $tawaran,
+            ];
+        }
+
         try {
             $visit = $this->booking->buat(
                 $pasien,
@@ -247,6 +294,11 @@ class AsistenChat
             );
         } catch (ValidationException $e) {
             return ['ok' => false, 'pesan' => Arr::flatten($e->errors())[0] ?? 'Janji gagal dibuat.'];
+        }
+
+        // Tawaran sudah terpakai — buang supaya tidak bisa dipakai dua kali.
+        if ($this->kunciTawaran !== null) {
+            Cache::forget($this->kunciTawaran);
         }
 
         return [
