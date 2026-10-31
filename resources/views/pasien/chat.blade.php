@@ -15,6 +15,35 @@
             dirasa berat sebaiknya langsung disampaikan ke petugas atau dokter.
         </div>
 
+        <div class="mt-4 rounded-xl border border-line bg-surface p-4">
+            <h2 class="text-sm font-semibold text-ink">Janji temu aktif</h2>
+            @if (! $pasien)
+                <p class="mt-1 text-sm text-muted">
+                    Belum ada data diri yang disetujui. Lengkapi data diri dulu supaya janji temu bisa dibuat.
+                </p>
+            @elseif (! $pasien->sudahTerverifikasi())
+                <p class="mt-1 text-sm text-muted">
+                    Kartu QR <strong>{{ $pasien->no_rm }}</strong> belum diverifikasi petugas. Tunjukkan
+                    kartu QR di meja pendaftaran saat datang pertama kali — setelah itu chatbot bisa
+                    membuatkan janji.
+                </p>
+            @elseif ($janji->isEmpty())
+                <p class="mt-1 text-sm text-muted">
+                    Belum ada janji. Contoh: "saya mau daftar ke dokter gigi besok pagi".
+                </p>
+            @else
+                <ul class="mt-2 space-y-1 text-sm text-ink">
+                    @foreach ($janji as $baris)
+                        <li>
+                            {{ $baris->doctor?->user?->name }} &middot; {{ $baris->poli?->nama }} &middot;
+                            {{ $baris->tgl_kunjungan?->format('d M Y') }} {{ substr((string) $baris->jam, 0, 5) }}
+                            <span class="text-muted">({{ $baris->status }})</span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
+
         <div class="mt-4 rounded-xl border border-line bg-surface">
             <div class="max-h-96 space-y-3 overflow-y-auto p-4">
                 @forelse ($pesan as $baris)
