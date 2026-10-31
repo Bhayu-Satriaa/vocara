@@ -28,7 +28,8 @@ Route::middleware(['auth', 'role:pasien'])->group(function () {
         ->middleware('profil')
         ->name('pasien.qr');
 
-    // Chatbot dasar (Tahap 1): tanya jawab dari basis pengetahuan, tanpa AI.
+    // Chatbot: dijawab model lewat 9Router; kalau gateway mati, jatuh ke jawaban FAQ
+    // dari basis pengetahuan. Rancangan: docs/SPEC-CHATBOT.md + docs/SPEC-BOOKING-CHATBOT.md
     Route::get('/chat', [ChatController::class, 'index'])
         ->middleware('profil')
         ->name('pasien.chat');
