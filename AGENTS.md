@@ -31,7 +31,14 @@ bawaan skeleton — referensi tooling, **bukan** aturan proyek).
 - Login **staf**: **email + password**, akun dibuat oleh admin. Staf tidak
   mendaftar sendiri dan tidak memakai Google.
 - **QR pasien dibuat otomatis saat pasien terdaftar.** Isi QR hanya **token acak
-  (UUID)** — bukan NIK, bukan data medis.
+  (UUID)** — bukan data identitas, bukan data medis.
+- **Multi-profile pasien** (disetujui 27 Okt 2026): satu akun boleh memegang beberapa
+  data diri (diri sendiri, anak, pasangan). `patients.is_utama` menandai data diri yang
+  dipakai untuk kartu QR & booking, `patients.hubungan_keluarga` menjelaskan pemiliknya.
+  `patients.user_id` **tidak** UNIQUE lagi; pembeda antar data diri hanya
+  **`patients.no_rm`** (unik, dibuat otomatis).
+- **NIK tidak disimpan** di sistem (dihapus 27 Okt 2026). Jangan menambahkan kolom,
+  field form, atau validasi NIK baru.
 - **Surat sakit dikesampingkan** dari scope; jangan ditambahkan kecuali diminta ulang.
 - Fitur wajib yang sudah disepakati tim: **chatbot AI** dan **AI Speech**
   (speech-to-text dan/atau text-to-speech).
@@ -45,10 +52,10 @@ bawaan skeleton — referensi tooling, **bukan** aturan proyek).
 - Login Google **hanya** untuk role `pasien`. Jangan membuka pendaftaran staf lewat
   Google.
 - Nomor WA belum diverifikasi OTP; verifikasi identitas sebenarnya dilakukan petugas
-  dengan mencocokkan KTP.
+  dengan mencocokkan **nama, tanggal lahir, dan alamat** dengan KTP.
 - Hasil scan QR hanya boleh diproses pengguna yang sudah login dengan role
   berwenang; setiap scan dicatat di `qr_scan_logs`.
-- Jangan memasukkan NIK atau data medis ke dalam QR.
+- Jangan memasukkan data identitas pribadi atau data medis ke dalam QR.
 - Jangan menambahkan fitur surat sakit.
 - Fitur yang masih berstatus "diusulkan" di `docs/DECISIONS.md` hanya dikerjakan
   kalau pengguna menyetujuinya.

@@ -58,7 +58,6 @@ class LoginGoogleTest extends TestCase
         Patient::query()->create([
             'user_id' => $user->id,
             'no_rm' => 'RM-000001',
-            'nik' => '1234567890123456',
             'nama_lengkap' => 'Pasien Google',
             'no_wa' => '081200000000',
             'tgl_lahir' => '1990-01-01',

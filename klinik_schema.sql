@@ -33,22 +33,24 @@ CREATE TABLE users (
 -- -----------------------------------------------------
 CREATE TABLE patients (
   id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id             BIGINT UNSIGNED NULL UNIQUE,  -- NULL jika didaftarkan petugas (walk-in)
-  no_rm               VARCHAR(20) NOT NULL UNIQUE,  -- nomor rekam medis
-  nik                 CHAR(16) NOT NULL UNIQUE,
+  user_id             BIGINT UNSIGNED NULL,         -- NULL jika didaftarkan petugas (walk-in); boleh lebih dari satu baris per akun (multi-profile)
+  is_utama            TINYINT(1) NOT NULL DEFAULT 0, -- data diri yang sedang dipakai akun ini untuk kartu QR & booking
+  no_rm               VARCHAR(20) NOT NULL UNIQUE,  -- nomor rekam medis: satu-satunya pembeda data diri pasien
   nama_lengkap        VARCHAR(100) NOT NULL,
+  hubungan_keluarga   ENUM('diri sendiri','pasangan','anak','orang tua','saudara','lainnya') NOT NULL DEFAULT 'diri sendiri',
   no_wa               VARCHAR(20) NOT NULL,
   tgl_lahir           DATE NOT NULL,
   jenis_kelamin       ENUM('L','P') NOT NULL,
   alamat              TEXT NULL,
   golongan_darah      ENUM('A','B','AB','O','-') NOT NULL DEFAULT '-',
   alergi              TEXT NULL,
-  qr_token            CHAR(36) NOT NULL UNIQUE,     -- UUID acak, isi QR (bukan data medis/NIK)
+  qr_token            CHAR(36) NOT NULL UNIQUE,     -- UUID acak, isi QR (bukan data identitas/data medis)
   verification_status ENUM('belum','terverifikasi') NOT NULL DEFAULT 'belum',
   verified_by         BIGINT UNSIGNED NULL,         -- petugas yang memverifikasi
   verified_at         DATETIME NULL,
   created_at          TIMESTAMP NULL,
   updated_at          TIMESTAMP NULL,
+  INDEX idx_patients_user (user_id, is_utama),      -- lookup cepat: data diri milik akun + mana yang sedang dipakai
   CONSTRAINT fk_patients_user     FOREIGN KEY (user_id)     REFERENCES users(id) ON DELETE SET NULL,
   CONSTRAINT fk_patients_verifier FOREIGN KEY (verified_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
