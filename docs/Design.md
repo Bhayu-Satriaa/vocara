@@ -165,8 +165,9 @@ Status kartu QR: *belum terverifikasi* → pill `bg-amber-soft text-amber-ink`,
 *terverifikasi* → `bg-green-soft text-green-ink`. Jangan tambahkan field NIK.
 
 **Kelompok petugas** — `routes/petugas.php`. `/petugas/scan` sudah jadi, jadikan acuan form (label `text-[12.5px] font-semibold`, input `h-10`, tombol utama
-full-width). Modul antrean / konfirmasi booking / kasir menyusul: memakai pola **tabel**
-(lihat Kelompok dokter) plus badge status; kwitansi cukup kartu + `font-mono` untuk nominal.
+full-width). Modul antrean / konfirmasi booking menyusul: memakai pola **tabel**
+(lihat Kelompok dokter) plus badge status. Pembayaran dan kwitansi **bukan** wilayah
+petugas lagi — lihat Kelompok admin.
 
 **Kelompok dokter** — `routes/dokter.php`. Pola umum: baris kartu ringkasan angka
 (`text-2xl font-bold` + label `text-xs text-faint`) di atas, lalu **tabel daftar pasien**:
@@ -176,9 +177,10 @@ komponen input + label di atas; riwayat/kunjungan memakai badge status (4 warna 
 Data medis sensitif — jangan ditampilkan tanpa lewat kontrol role (AGENTS.md).
 
 **Kelompok apoteker** — `routes/apoteker.php`. Daftar resep: tabel + badge status resep
-(`menunggu` amber, `disiapkan` biru, `selesai` hijau). Stok obat: angka stok `font-mono`,
-stok menipis diberi penanda `text-amber-ink` / `text-red-600`, batasnya `stok menipis`
-dari model — jangan dihitung ulang di view.
+(`menunggu` amber, `disiapkan` biru, `selesai` hijau). Isi resep tampil sebagai teks
+dari dokter (nama obat, dosis, aturan pakai). **Tidak ada tampilan stok** — jangan
+menambah kolom stok, penanda "stok menipis", atau tombol stok masuk/keluar. Etiket obat
+tetap dicetak.
 
 **Kelompok admin** — data master & laporan di `routes/admin-klinik.php`, back office
 Filament v5 di `/admin` (`AdminPanelProvider`, di luar `resources/` tapi termasuk tampilan,
@@ -197,6 +199,11 @@ Badge status kunjungan (`booking`, `menunggu`, `diperiksa`, `farmasi`, `pembayar
 `diperiksa` `#dbeafe`/`#1d4ed8` · `menunggu` `#fef3c7`/`#b45309` · `selesai` `#dcfce7`/`#15803d`
 · `batal` `#fee2e2`/`#dc2626`. **Tambahkan token-nya dulu di `@theme`** (lihat tabel warna),
 jangan memakai hex lepas di view.
+
+Badge status pembayaran (halaman admin dan riwayat pasien) memakai token yang sudah ada —
+tanpa token baru: `lunas` = `bg-green-soft text-green-ink`, `belum lunas` =
+`bg-amber-soft text-amber-ink`. Toggle status + metode (`transfer` / `cash`) hanya muncul
+untuk role admin. Kwitansi cukup kartu + `font-mono` untuk nominal.
 
 ## Larangan singkat (detail di AGENTS.md)
 
