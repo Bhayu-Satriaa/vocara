@@ -37,7 +37,7 @@ triase dan saran, keputusan medis tetap di tangan dokter.
 | Login Google (OAuth) + lengkapi profil, nomor WA wajib | ✅ Sudah jadi |
 | Nomor rekam medis otomatis (`RM-000001`) | ✅ Sudah jadi |
 | QR pribadi (gambar QR + cetak) dengan status belum/terverifikasi | ✅ Sudah jadi |
-| Multi profil: satu akun untuk beberapa anggota keluarga | 🔜 Direncanakan (Ridwan) |
+| Multi profil: satu akun untuk beberapa anggota keluarga (data diri baru lewat persetujuan admin) | ✅ Sudah jadi (Ridwan) |
 | Booking jadwal dokter (pilih jam dari slot dokter) | 🔜 Direncanakan (Nabil) |
 | Booking untuk anggota keluarga lain | 🔜 Direncanakan (Ridwan) |
 | Lihat antrean, riwayat kunjungan, resep, tagihan | 🔜 Direncanakan |
@@ -85,6 +85,7 @@ sebenarnya sudah habis. Ini penundaan, bukan pembatalan permanen.
 | Fitur | Status |
 |---|---|
 | Manajemen akun semua role (panel Filament di `/admin`) | ✅ Sudah jadi (akun staf) |
+| Persetujuan pengajuan profil pasien: admin menyetujui/menolak data diri baru, nomor RM + QR terbit setelah disetujui (`/admin-klinik/persetujuan-profil`) | ✅ Sudah jadi |
 | Data master: poli, dokter, jadwal, tarif, ICD-10 | ✅ Sudah jadi (lewat seeder) / 🔜 CRUD lewat panel |
 | Dashboard statistik: kunjungan, penyakit terbanyak | 🔜 Direncanakan |
 | Pembayaran: toggle status (lunas / belum lunas) + metode (transfer / cash) + cetak kwitansi | 🔜 Direncanakan |
@@ -102,8 +103,9 @@ sebenarnya sudah habis. Ini penundaan, bukan pembatalan permanen.
 ## 3. Alur utama yang sudah ditetapkan
 
 - **Alur login pasien:** login Google → akun `pasien` dibuat otomatis → wajib
-  lengkapi profil (nomor WA) → QR dibuat otomatis berstatus `belum` → saat datang
-  pertama petugas mencocokkan KTP → status `terverifikasi`.
+  lengkapi profil (nomor WA) → data diri masuk sebagai **pengajuan ke admin**; setelah
+  disetujui, nomor RM + QR terbit berstatus `belum` → saat datang pertama petugas
+  mencocokkan KTP → status `terverifikasi`.
 - **Alur QR:** QR berisi **token acak UUID** (`patients.qr_token`), bukan NIK atau
   data medis. Petugas memindai di `/petugas/scan` → data pasien muncul → tombol
   verifikasi KTP. Setiap pemindaian dicatat di `qr_scan_logs`, setiap tindakan di
@@ -116,8 +118,9 @@ sebenarnya sudah habis. Ini penundaan, bukan pembatalan permanen.
 
 ## 4. Yang sudah jadi dan bisa didemokan sekarang
 
-- Skema **23 tabel** aplikasi (31 tabel di database bersama 8 tabel bawaan Laravel),
-  **28 migrasi**, **37 foreign key** — sudah dijalankan di database `klinik_db`.
+- Skema **23 tabel** aplikasi + `patient_profile_requests` (24 tabel; 32 tabel di database
+  bersama 8 tabel bawaan Laravel), **29 migrasi**, **37 foreign key** — sudah dijalankan di
+  database `klinik_db`.
 - **Anti double-booking dijaga database** (bukan pengecekan di aplikasi):
   `UNIQUE uq_slot_dokter (doctor_id, tgl_kunjungan, jam, slot_aktif)`; kunjungan
   batal otomatis membebaskan slotnya.
@@ -133,8 +136,11 @@ sebenarnya sudah habis. Ini penundaan, bukan pembatalan permanen.
 - **Scan QR + verifikasi KTP petugas** di `/petugas/scan`.
 - **Multi profil pasien** — satu akun memegang beberapa data diri, masing-masing
   bernomor RM dan QR sendiri, dengan pemilihan profil aktif di `/profil`.
-- **53 test otomatis lulus (205 assertion)** — mencakup login staf, panel admin,
-  login Google pasien, profil pasien, pemindaian QR, dan multi profil.
+- **Persetujuan profil oleh admin** — data diri baru yang diajukan pasien masuk ke
+  `patient_profile_requests` (status menunggu/disetujui/ditolak) dan belum dapat nomor
+  RM maupun QR sebelum disetujui di `/admin-klinik/persetujuan-profil`.
+- **59 test otomatis lulus (253 assertion)** — mencakup login staf, panel admin,
+  login Google pasien, profil pasien, pemindaian QR, multi profil, dan persetujuan profil.
 
 ## 5. Keputusan teknis yang sudah final
 

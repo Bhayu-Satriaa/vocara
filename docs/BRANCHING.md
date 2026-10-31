@@ -77,7 +77,7 @@ git push -u origin juli/design-login         # lihat bagian 6 soal cara push
 
 ## 5. Yang dicek reviewer
 
-1. `php artisan test` lulus (baseline repo: **58 test** — PR tidak boleh
+1. `php artisan test` lulus (baseline repo: **59 test** — PR tidak boleh
    menurunkannya).
 2. Tidak ada `.env`, `vendor/`, `public/build`, atau data pribadi ikut ter-commit.
 3. Route baru dibatasi role yang benar (`middleware('role:...')`), dan halaman

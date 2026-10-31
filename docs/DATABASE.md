@@ -9,6 +9,8 @@
 
 - **Akun:** `users`
 - **Pasien dan QR:** `patients`, `qr_scan_logs`
+- **Pengajuan profil:** `patient_profile_requests` (data diri baru sebelum disetujui admin;
+  belum punya `no_rm`/QR)
 - **Dokter:** `polis`, `doctors`, `doctor_schedules`
 - **Kunjungan:** `visits`
 - **Rekam medis:** `medical_records`, `diseases`, `medical_record_diagnoses`

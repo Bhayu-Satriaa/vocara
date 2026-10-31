@@ -54,6 +54,9 @@ rincian fitur; aturan umum dan konvensi kode ada di `AGENTS.md`.
   sendiri dan keluarga) plus tombol **Tambah data diri**. Tiap data diri punya nomor
   rekam medis dan QR sendiri; pasien memilih mana yang **dipakai** (`patients.is_utama`)
   untuk kartu QR dan booking. Data diri pertama otomatis jadi yang dipakai.
+  Data diri baru (pertama atau keluarga) dikirim sebagai **pengajuan** ke
+  `patient_profile_requests`; nomor RM dan QR terbit setelah admin menyetujui di
+  `/admin-klinik/persetujuan-profil`.
 - QR pribadi dengan status *belum terverifikasi* atau *terverifikasi*; unduh/simpan QR.
 - Booking jadwal dokter, lihat antrean, riwayat kunjungan/resep/tagihan, jadwal praktik.
   Tagihan menampilkan status **lunas** / **belum lunas** beserta metode
@@ -104,9 +107,10 @@ Dua jalur yang sudah diputuskan sebagai fitur wajib:
 
 1. Klik **Masuk dengan Google**; akun dengan role `pasien` dibuat otomatis bila belum ada.
 2. Diarahkan ke halaman **Lengkapi Profil** (middleware memblokir fitur booking dan QR
-   sampai nomor WA terisi). Data diri pertama ini otomatis jadi profil yang dipakai;
-   data diri keluarga bisa ditambahkan kapan saja dari halaman Profil.
-3. QR dibuat otomatis dengan status `belum`.
+   sampai nomor WA terisi). Pengajuan data diri (pertama maupun keluarga) dikirim ke
+   admin dan diverifikasi di `/admin-klinik/persetujuan-profil`; data diri pertama otomatis
+   jadi profil yang dipakai.
+3. Setelah pengajuan disetujui, nomor RM + QR dibuat otomatis dengan status `belum`.
 4. Saat pertama datang, petugas scan QR dan mencocokkan KTP, lalu status menjadi
    `terverifikasi`.
 
