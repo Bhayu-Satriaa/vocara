@@ -35,7 +35,7 @@ return [
         'key' => env('LLM_API_KEY', '9router-lokal'),
         'model' => env('LLM_MODEL', 'cmc/moonshotai/Kimi-K2.7-Code-Highspeed'),
         'model_fallback' => env('LLM_MODEL_FALLBACK', 'cmc/zai-org/GLM-5.2-Fast'),
-        'max_tokens' => (int) env('LLM_MAX_TOKENS', 400),
+        'max_tokens' => (int) env('LLM_MAX_TOKENS', 1200),
         'timeout' => (int) env('LLM_TIMEOUT', 60),
     ],
 

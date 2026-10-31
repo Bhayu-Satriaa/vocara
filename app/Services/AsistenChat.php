@@ -61,7 +61,9 @@ class AsistenChat
             ];
         }
 
-        $intent = 'faq';
+        // Bawaan 'ai': jawaban dari model tanpa tool. Kalau ada tool yang dipanggil,
+        // nilai ini ditimpa intent tool-nya ('tanya_jadwal', 'buat_janji', ...).
+        $intent = 'ai';
 
         for ($ronde = 0; $ronde < self::MAKS_RONDE; $ronde++) {
             $jawaban = $this->panggilModel($pesan);
@@ -108,28 +110,56 @@ class AsistenChat
     private function panggilModel(array $pesan): ?array
     {
         $model = [config('services.llm.model'), config('services.llm.model_fallback')];
+        $anggaran = (int) config('services.llm.max_tokens');
 
         foreach (array_unique(array_filter($model)) as $nama) {
-            $respon = Http::withToken(config('services.llm.key'))
-                ->timeout((int) config('services.llm.timeout'))
-                ->acceptJson()
-                ->post(rtrim((string) config('services.llm.base_url'), '/').'/chat/completions', [
+            // Model penalar bisa menghabiskan anggaran token untuk "berpikir" sehingga
+            // `content` keluar kosong (finish_reason=length). Coba ulang dengan anggaran
+            // dua kali lipat sebelum menyerah — kalau tidak, jawaban hilang padahal gateway sehat.
+            for ($percobaan = 1; $percobaan <= 2; $percobaan++) {
+                $respon = Http::withToken(config('services.llm.key'))
+                    ->timeout((int) config('services.llm.timeout'))
+                    ->acceptJson()
+                    ->post(rtrim((string) config('services.llm.base_url'), '/').'/chat/completions', [
+                        'model' => $nama,
+                        'messages' => $pesan,
+                        'tools' => $this->alat(),
+                        'max_tokens' => $anggaran,
+                    ]);
+
+                if (! $respon->successful()) {
+                    // Dicatat supaya kegagalan gateway bisa ditelusuri (tanpa menulis kunci).
+                    Log::warning('Gateway model menolak permintaan', [
+                        'model' => $nama,
+                        'status' => $respon->status(),
+                        'body' => substr((string) $respon->body(), 0, 300),
+                    ]);
+
+                    break;
+                }
+
+                $jawaban = $respon->json('choices.0.message');
+                $alasan = $respon->json('choices.0.finish_reason');
+                $kosong = trim((string) ($jawaban['content'] ?? '')) === ''
+                    && ($jawaban['tool_calls'] ?? []) === [];
+
+                if (! $kosong && $alasan !== 'length') {
+                    return $jawaban;
+                }
+
+                Log::warning('Jawaban model kosong atau terpotong', [
                     'model' => $nama,
-                    'messages' => $pesan,
-                    'tools' => $this->alat(),
-                    'max_tokens' => (int) config('services.llm.max_tokens'),
+                    'finish_reason' => $alasan,
+                    'max_tokens' => $anggaran,
+                    'percobaan' => $percobaan,
                 ]);
 
-            if ($respon->successful()) {
-                return $respon->json('choices.0.message');
-            }
+                if ($percobaan === 2) {
+                    return $kosong ? null : $jawaban;
+                }
 
-            // Dicatat supaya kegagalan gateway bisa ditelusuri (tanpa menulis kunci).
-            Log::warning('Gateway model menolak permintaan', [
-                'model' => $nama,
-                'status' => $respon->status(),
-                'body' => substr((string) $respon->body(), 0, 300),
-            ]);
+                $anggaran = min($anggaran * 2, 3000);
+            }
         }
 
         return null;
@@ -307,8 +337,9 @@ class AsistenChat
         1. Kamu BUKAN pengganti dokter: jangan memberi diagnosis, dosis obat, atau janji kesembuhan. Untuk keluhan berat, arahkan ke petugas/dokter.
         2. Sebelum memanggil buat_janji, kamu WAJIB meringkas pilihan (dokter, poli, tanggal, hari, jam) dan meminta konfirmasi pasien. Panggil buat_janji HANYA setelah pasien menjawab setuju secara jelas.
         3. Kalau status verifikasi pasien bukan 'terverifikasi', jangan memanggil buat_janji. Jelaskan bahwa kartu QR harus ditunjukkan ke petugas dulu.
-        4. Tanggal dan nama hari selalu ambil dari hasil tool, jangan menghitung sendiri.
+        4. Tanggal, nama hari, jam, dan nama dokter WAJIB disalin persis dari hasil tool. Jangan mengarang, menebak tahun, atau menambah hari/jam yang tidak ada di hasil tool.
         5. Pakai tool cek_jadwal sebelum menyebut jam yang tersedia.
+        6. Kalau jawaban tidak ada di hasil tool dan tidak ada di pengetahuan klinik, katakan belum tahu dan arahkan ke petugas. Jangan mengarang biaya, jam buka, atau nomor telepon.
         PROMPT;
     }
 

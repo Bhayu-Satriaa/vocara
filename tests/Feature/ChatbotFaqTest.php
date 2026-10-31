@@ -19,6 +19,18 @@ class ChatbotFaqTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Test ini soal jalur FAQ, bukan AI. Matikan alamat gateway supaya tidak pernah
+     * menembak 9Router sungguhan — kalau .env punya kunci, jawaban model akan menimpa
+     * jawaban FAQ dan test ini gagal karena alasan yang salah.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['services.llm.base_url' => null]);
+    }
+
     /** Pasien dengan data diri (profil lengkap), siap memakai halaman chat. */
     private function pasien(string $email = 'pasien@klinik.test'): User
     {

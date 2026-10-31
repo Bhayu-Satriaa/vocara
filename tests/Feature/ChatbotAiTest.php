@@ -113,6 +113,8 @@ class ChatbotAiTest extends TestCase
         $this->assertDatabaseHas('chat_messages', [
             'pengirim' => 'bot',
             'isi' => 'Halo, silakan tanya soal jadwal atau pendaftaran.',
+            // 'ai' = jawaban model tanpa tool; 'faq' khusus jalur basis pengetahuan.
+            'intent' => 'ai',
         ]);
     }
 
