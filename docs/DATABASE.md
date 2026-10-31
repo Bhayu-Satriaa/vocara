@@ -13,9 +13,9 @@
 - **Kunjungan:** `visits`
 - **Rekam medis:** `medical_records`, `diseases`, `medical_record_diagnoses`
 - **Layanan:** `services`, `visit_services`
-- **Farmasi:** `medicines`, `medicine_stock_movements`, `prescriptions`,
-  `prescription_items`
-- **Pembayaran:** `payments`
+- **Farmasi:** `prescriptions`, `prescription_items`; `medicines` dan
+  `medicine_stock_movements` **tidak dipakai fitur saat ini** (lihat "Konvensi data")
+- **Pembayaran:** `payments` (status + metode, diubah admin; tanpa payment gateway)
 - **Chatbot dan speech:** `chatbot_knowledge`, `chat_conversations`, `chat_messages`,
   `triage_results`, `speech_logs`
 - **Audit:** `activity_logs`
@@ -27,7 +27,8 @@ Tabel bawaan Laravel (`sessions`, `password_reset_tokens`, `jobs`, `cache`,
 
 - Kunjungan (`visits`) adalah titik temu pasien dengan dokter/jadwal; status kunjungan
   disimpan di `visits.status` (`booking → menunggu → diperiksa → farmasi →
-  pembayaran → selesai`, atau `batal`).
+  pembayaran → selesai`, atau `batal`). Perpindahan `pembayaran → selesai` terjadi saat
+  admin menandai `payments.status` menjadi `lunas`.
 - `patients.user_id` menunjuk ke akun `users` dan **boleh kosong** untuk pasien walk-in
   yang didaftarkan petugas. Satu akun pasien boleh memegang **lebih dari satu data
   diri** (multi-profile: diri sendiri, anak, pasangan); tiap data diri punya `no_rm`
@@ -36,7 +37,8 @@ Tabel bawaan Laravel (`sessions`, `password_reset_tokens`, `jobs`, `cache`,
   di `medical_record_diagnoses` dan merujuk ke `diseases`.
 - Layanan yang dikerjakan pada satu kunjungan ada di `visit_services`; resep pada satu
   kunjungan ada di `prescriptions` + `prescription_items`.
-- Pergerakan stok obat dicatat di `medicine_stock_movements`.
+- `medicine_stock_movements` tidak dipakai: manajemen stok obat dihapus sementara
+  (lihat `docs/DECISIONS.md`).
 - Setiap scan QR tercatat di `qr_scan_logs`; aktivitas lain (termasuk akses rekam medis)
   di `activity_logs`.
 - Percakapan chatbot: `chat_conversations` → `chat_messages`; hasil triase di
@@ -65,6 +67,16 @@ Arah relasi di atas mengikuti penamaan tabel; nama kolom foreign key yang tepat
   `durasi_slot`.
 - **Harga disalin** ke `visit_services.harga` dan `prescription_items.harga` saat
   transaksi terjadi — bukan hasil hitung ulang dari data master.
+- **Pembayaran = status, bukan integrasi.** `payments.status` bernilai `belum_lunas`
+  atau `lunas`, `payments.metode` bernilai `transfer` atau `cash` — diubah (toggle)
+  oleh **admin**, bukan kasir, dan dicatat di `activity_logs`. Tidak ada payment
+  gateway, verifikasi otomatis, atau pembayaran online. Kwitansi dicetak dari
+  `payments.nomor_kwitansi`.
+- **Resep** disimpan sebagai teks bebas dari dokter (nama obat, dosis, aturan pakai).
+  `medicines` dan `prescription_items.medicine_id` tidak dipakai fitur saat ini — skema
+  masih mewajibkan `medicine_id` NOT NULL + foreign key, jadi migrasi perlu dibuat kalau
+  nanti diaktifkan.
+- **Tanpa BPJS/asuransi**: aplikasi tidak mencatat data BPJS atau asuransi lain.
 - Catatan pemeriksaan hasil dikte ditandai **`medical_records.diinput_via_suara`**.
 - Verifikasi identitas pasien dicatat lewat status QR (`belum` → `terverifikasi`)
   setelah petugas mencocokkan **nama, tanggal lahir, dan alamat** dengan KTP; nomor WA
