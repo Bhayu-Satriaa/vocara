@@ -43,7 +43,7 @@ triase dan saran, keputusan medis tetap di tangan dokter.
 | Lihat antrean, riwayat kunjungan, resep, tagihan | 🔜 Direncanakan |
 | Chatbot (FAQ, bantu booking, triase awal) + bicara ke chatbot | 🔜 Direncanakan (Jian) |
 
-### Petugas pendaftaran / kasir
+### Petugas pendaftaran
 
 | Fitur | Status |
 |---|---|
@@ -52,8 +52,9 @@ triase dan saran, keputusan medis tetap di tangan dokter.
 | Daftarkan pasien walk-in (QR otomatis) | 🔜 Direncanakan |
 | Pencarian manual pasien kalau QR hilang | 🔜 Direncanakan |
 | Kelola antrean + konfirmasi booking online + nomor antrean | 🔜 Direncanakan |
-| Pembayaran dan kwitansi | 🔜 Direncanakan |
 | Panggilan antrean lewat suara (TTS) | 🔜 Direncanakan (Jian) |
+
+Pembayaran dan kwitansi **sementara** ditangani admin, bukan petugas.
 
 ### Dokter
 
@@ -64,25 +65,29 @@ triase dan saran, keputusan medis tetap di tangan dokter.
 | Riwayat rekam medis pasien | 🔜 Direncanakan |
 | Input pemeriksaan format SOAP + tanda vital | 🔜 Direncanakan |
 | Diagnosis memakai ICD-10 | 🔜 Direncanakan |
-| Resep elektronik | 🔜 Direncanakan |
+| Resep elektronik (teks bebas: nama obat, dosis, aturan pakai) | 🔜 Direncanakan |
 | Dikte catatan SOAP (STT) + ringkasan triase chatbot | 🔜 Direncanakan (Jian) |
 
 ### Apoteker
 
 | Fitur | Status |
 |---|---|
-| Daftar resep masuk + status (menunggu/disiapkan/selesai) | 🔜 Direncanakan |
+| Daftar resep masuk berisi obat dari resep dokter (teks) + status (menunggu/disiapkan/selesai) | 🔜 Direncanakan |
 | Scan QR saat penyerahan obat | 🔜 Direncanakan |
-| Manajemen stok obat (masuk, keluar, kedaluwarsa, stok minimum) | 🔜 Direncanakan |
 | Cetak etiket | 🔜 Direncanakan |
+
+**Tanpa manajemen stok** (dihapus sementara): stok masuk, keluar, kedaluwarsa, dan stok
+minimum tidak dicatat. Konsekuensinya apoteker tidak dapat peringatan kalau obat
+sebenarnya sudah habis. Ini penundaan, bukan pembatalan permanen.
 
 ### Admin
 
 | Fitur | Status |
 |---|---|
 | Manajemen akun semua role (panel Filament di `/admin`) | ✅ Sudah jadi (akun staf) |
-| Data master: poli, dokter, jadwal, tarif, ICD-10, obat | ✅ Sudah jadi (lewat seeder) / 🔜 CRUD lewat panel |
-| Dashboard statistik: kunjungan, penyakit terbanyak, pendapatan, stok menipis | 🔜 Direncanakan |
+| Data master: poli, dokter, jadwal, tarif, ICD-10 | ✅ Sudah jadi (lewat seeder) / 🔜 CRUD lewat panel |
+| Dashboard statistik: kunjungan, penyakit terbanyak | 🔜 Direncanakan |
+| Pembayaran: toggle status (lunas / belum lunas) + metode (transfer / cash) + cetak kwitansi | 🔜 Direncanakan |
 | Laporan dan ekspor PDF/Excel | 🔜 Direncanakan |
 | Log aktivitas (scan QR, akses rekam medis) | ✅ Sudah jadi |
 | Kelola basis pengetahuan chatbot + pengaturan suara | 🔜 Direncanakan (Jian) |
@@ -91,7 +96,8 @@ triase dan saran, keputusan medis tetap di tangan dokter.
 
 - 🔜 Notifikasi/pengingat jadwal dan resep siap.
 - ✅ Kontrol akses berbasis role (middleware per role; pasien tidak bisa membuka
-  halaman staf, staf tidak bisa membuka halaman pasien).
+  halaman staf, staf tidak bisa membuka halaman pasien). Ubah status pembayaran hanya
+  untuk admin.
 
 ## 3. Alur utama yang sudah ditetapkan
 
@@ -103,12 +109,15 @@ triase dan saran, keputusan medis tetap di tangan dokter.
   verifikasi KTP. Setiap pemindaian dicatat di `qr_scan_logs`, setiap tindakan di
   `activity_logs`.
 - **Alur status kunjungan:** `booking → menunggu → diperiksa → farmasi → pembayaran
-  → selesai` (atau `batal`).
+  → selesai` (atau `batal`). Tahap `pembayaran` tetap ada, tetapi perpindahannya
+  ditentukan oleh **status pembayaran yang di-toggle admin**: kunjungan menjadi
+  `selesai` setelah admin menandai pembayaran `lunas`. Tidak ada payment gateway
+  atau verifikasi otomatis.
 
 ## 4. Yang sudah jadi dan bisa didemokan sekarang
 
 - Skema **23 tabel** aplikasi (31 tabel di database bersama 8 tabel bawaan Laravel),
-  **26 migrasi**, **37 foreign key** — sudah dijalankan di database `klinik_db`.
+  **28 migrasi**, **37 foreign key** — sudah dijalankan di database `klinik_db`.
 - **Anti double-booking dijaga database** (bukan pengecekan di aplikasi):
   `UNIQUE uq_slot_dokter (doctor_id, tgl_kunjungan, jam, slot_aktif)`; kunjungan
   batal otomatis membebaskan slotnya.
@@ -122,8 +131,10 @@ triase dan saran, keputusan medis tetap di tangan dokter.
   perubahan akun tercatat di log).
 - **Kartu QR pasien** dengan gambar QR (SVG) + tombol cetak.
 - **Scan QR + verifikasi KTP petugas** di `/petugas/scan`.
-- **42 test otomatis lulus (143 assertion)** — mencakup login staf, panel admin,
-  login Google pasien, profil pasien, dan pemindaian QR.
+- **Multi profil pasien** — satu akun memegang beberapa data diri, masing-masing
+  bernomor RM dan QR sendiri, dengan pemilihan profil aktif di `/profil`.
+- **53 test otomatis lulus (205 assertion)** — mencakup login staf, panel admin,
+  login Google pasien, profil pasien, pemindaian QR, dan multi profil.
 
 ## 5. Keputusan teknis yang sudah final
 
@@ -153,27 +164,31 @@ triase dan saran, keputusan medis tetap di tangan dokter.
 | Royan | Belum dikonfirmasi |
 
 **Belum ada pemiliknya** (perlu keputusan): antrean & check-in petugas · pemeriksaan
-dokter (SOAP) · farmasi & stok obat · kasir/pembayaran · data master + statistik admin.
+dokter (SOAP) · farmasi (serah obat) · pembayaran & kwitansi (admin) · data master +
+statistik admin.
 
 ## 7. Masih terbuka — bahan diskusi dengan dospem
 
 1. **Jumlah anggota final dan batas waktu** pengerjaan (menahan pembagian tugas).
 2. **Apakah scope seluas ini realistis** atau perlu dipotong. Kandidat potong:
-   farmasi/stok, kasir, laporan PDF/Excel.
-3. **Multi profil** (1 akun banyak biodata) mengubah skema — `patients.user_id`
-   sekarang UNIQUE, jadi butuh migrasi tambahan. Perlu penilaian: nilai tambah atau
-   risiko?
+   farmasi, laporan PDF/Excel.
+3. ✅ **Multi profil** (1 akun banyak biodata) — sudah dikerjakan: UNIQUE
+   `patients.user_id` dilepas, ditambah `patients.is_utama` + `patients.hubungan_keluarga`,
+   profil aktif dipakai kartu QR dan booking. Satu `is_utama` per akun dijaga aplikasi
+   (`Patient::jadikanUtama()`), bukan UNIQUE database.
 4. **AI speech: satu arah (TTS) saja, atau dua arah (STT + TTS)?**
-5. **Pasien walk-in tanpa NIK** belum bisa didaftarkan karena kolom `nik` dan `no_wa`
-   wajib — perlu keputusan aturan.
+5. `nik` **dihapus** dari `patients` (migrasi `2026_10_27_1000025`) — pembeda antar data
+   diri hanya `no_rm`. Sisa aturan yang masih terbuka: `no_wa` tetap wajib untuk pasien
+   yang mendaftar sendiri.
 6. **Kapan nomor antrean dibuat**: saat booking atau saat check-in.
 7. **Format nomor rekam medis** `RM-` + 6 angka (usulan, perlu konfirmasi).
 8. **Kuota/biaya AI**: sementara memakai free tier Gemini (kuota model suara ketat);
    perlu keputusan apakah memakai anggaran/billing.
 9. **Fitur usulan yang belum disetujui** (jangan dianggap scope): ringkasan rekam
    medis otomatis, pengingat otomatis email/WA, grafik tanda vital, telekonsultasi
-   chat, penjelasan resep awam, BPJS/asuransi, consent pasien untuk AI.
-   **Surat sakit sudah dikesampingkan** oleh tim.
+   chat, penjelasan resep awam, consent pasien untuk AI.
+   **Surat sakit sudah dikesampingkan** oleh tim. **BPJS/asuransi tidak dipakai.**
+   **Manajemen stok obat ditunda sementara** (bukan dibatalkan).
 10. **10 tabel** belum punya `created_at`/`updated_at` (sementara dimatikan di model)
     — perlu keputusan apakah diseragamkan.
 
@@ -181,9 +196,10 @@ dokter (SOAP) · farmasi & stok obat · kasir/pembayaran · data master + statis
 
 1. ✅ Skema, model, seeder, login staf, panel admin, login pasien + QR.
 2. ✅ Scan QR + verifikasi KTP (modul petugas, bagian QR).
-3. 🔜 Multi profil (dikerjakan lebih dulu karena mengubah asumsi "1 akun = 1 pasien").
+3. ✅ Multi profil (selesai — 2 migrasi + `MultiprofilPasienTest`).
 4. 🔜 Janji temu / booking kunjungan → antrean & check-in.
-5. 🔜 Pemeriksaan dokter (SOAP, ICD-10, resep) → farmasi & stok → kasir.
+5. 🔜 Pemeriksaan dokter (SOAP, ICD-10, resep) → farmasi (serah obat) → pembayaran &
+   kwitansi (admin). Manajemen stok obat ditunda, bukan dibatalkan.
 6. 🔜 Data master + statistik admin.
 7. 🔜 **Terakhir: chatbot AI, lalu AI Speech** (fitur wajib, ditunjukkan di demo akhir).
 
