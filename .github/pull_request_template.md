@@ -12,7 +12,7 @@
 
 ## Daftar periksa
 
-- [ ] `php artisan test` lulus (baseline repo 42 test, tidak menurun)
+- [ ] `php artisan test` lulus (baseline repo 58 test, tidak menurun)
 - [ ] Satu fitur tuntas: migrasi → model → controller → route → view
 - [ ] Tidak ada `.env`, `vendor/`, `public/build`, atau data pribadi ikut ter-commit
 - [ ] Route baru dibatasi role yang benar (`middleware('role:...')`)
