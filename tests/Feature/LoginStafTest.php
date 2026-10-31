@@ -31,14 +31,18 @@ class LoginStafTest extends TestCase
         $this->get(route('dashboard'))->assertOk()->assertSee('Dashboard petugas');
     }
 
-    public function test_admin_diarahkan_ke_panel_filament(): void
+    public function test_admin_diarahkan_ke_dashboard_dan_panel_filament_tetap_bisa_dibuka(): void
     {
         User::factory()->role('admin')->create(['email' => 'admin@klinik.test']);
 
         $this->post(route('login.masuk'), [
             'email' => 'admin@klinik.test',
             'password' => UserFactory::PASSWORD,
-        ])->assertRedirect('/admin');
+        ])->assertRedirect(route('dashboard'));
+
+        // Regresi: dulu halaman ini 500 karena view memanggil route('admin.pengguna') yang sudah dihapus.
+        $this->get(route('dashboard'))->assertOk()->assertSee('Dashboard admin');
+        $this->get('/admin')->assertOk();
     }
 
     public function test_password_salah_ditolak(): void
