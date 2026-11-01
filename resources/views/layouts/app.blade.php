@@ -16,11 +16,11 @@
             $menu = [
                 ['label' => 'Dashboard', 'href' => route('dashboard'), 'ikon' => 'grid', 'aktif' => request()->routeIs('dashboard')],
             ];
-            if (auth()->user()->punyaRole('petugas', 'admin')) {
+            if (auth()->user()->punyaRole('petugas')) {
                 $menu[] = ['label' => 'Scan QR pasien', 'href' => route('petugas.scan'), 'ikon' => 'scan', 'aktif' => request()->routeIs('petugas.scan*')];
             }
             if (auth()->user()->punyaRole('admin')) {
-                $menu[] = ['label' => 'Panel admin', 'href' => url('/admin'), 'ikon' => 'panel', 'aktif' => request()->is('admin*')];
+                $menu[] = ['label' => 'Panel admin', 'href' => route('admin.panel-admin.index'), 'ikon' => 'panel', 'aktif' => request()->routeIs('admin.panel-admin*', 'admin.akun-staf*')];
                 if (\Illuminate\Support\Facades\Route::has('admin.persetujuan-profil.index')) {
                     $menu[] = ['label' => 'Persetujuan Profil', 'href' => route('admin.persetujuan-profil.index'), 'ikon' => 'user', 'aktif' => request()->routeIs('admin.persetujuan-profil*')];
                 }
