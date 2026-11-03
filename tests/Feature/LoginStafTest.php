@@ -15,7 +15,7 @@ class LoginStafTest extends TestCase
     {
         $this->get(route('login'))
             ->assertOk()
-            ->assertSee('Masuk untuk staf klinik');
+            ->assertSee('Selamat datang kembali');
     }
 
     public function test_staf_bisa_masuk_lalu_diarahkan_ke_dashboard(): void
@@ -31,7 +31,7 @@ class LoginStafTest extends TestCase
         $this->get(route('dashboard'))->assertOk()->assertSee('Dashboard petugas');
     }
 
-    public function test_admin_diarahkan_ke_dashboard_dan_panel_filament_tetap_bisa_dibuka(): void
+    public function test_admin_diarahkan_ke_dashboard_dan_panel_lama_sudah_tidak_ada(): void
     {
         User::factory()->role('admin')->create(['email' => 'admin@klinik.test']);
 
@@ -42,7 +42,7 @@ class LoginStafTest extends TestCase
 
         // Regresi: dulu halaman ini 500 karena view memanggil route('admin.pengguna') yang sudah dihapus.
         $this->get(route('dashboard'))->assertOk()->assertSee('Dashboard admin');
-        $this->get('/admin')->assertOk();
+        $this->get('/admin')->assertNotFound();
     }
 
     public function test_password_salah_ditolak(): void

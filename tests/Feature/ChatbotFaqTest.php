@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\ChatbotKnowledges\Pages\CreateKnowledge;
 use App\Models\ChatbotKnowledge;
 use App\Models\Patient;
 use App\Models\User;
 use App\Services\ChatbotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
@@ -58,20 +56,18 @@ class ChatbotFaqTest extends TestCase
         ]);
     }
 
-    public function test_admin_bisa_menambah_pengetahuan_dari_panel(): void
+    public function test_admin_bisa_menambah_pengetahuan_dari_dashboard(): void
     {
         $admin = User::factory()->role('admin')->create();
-        $this->actingAs($admin);
 
-        Livewire::test(CreateKnowledge::class)
-            ->fillForm([
+        $this->actingAs($admin)
+            ->post(route('admin.pengetahuan-chatbot.store'), [
                 'kategori' => 'Biaya',
                 'pertanyaan' => 'berapa biaya konsultasi dokter umum',
                 'jawaban' => 'Tarif konsultasi mengikuti dokter yang dipilih.',
-                'is_active' => true,
+                'is_active' => '1',
             ])
-            ->call('create')
-            ->assertHasNoFormErrors();
+            ->assertRedirect(route('admin.pengetahuan-chatbot.index'));
 
         $baris = ChatbotKnowledge::query()->where('kategori', 'Biaya')->first();
 
@@ -82,19 +78,16 @@ class ChatbotFaqTest extends TestCase
     public function test_admin_bisa_membuka_kelola_pengetahuan(): void
     {
         $this->actingAs(User::factory()->role('admin')->create())
-            ->get('/admin/chatbot-knowledge')
-            ->assertOk();
+            ->get(route('admin.pengetahuan-chatbot.index'))
+            ->assertOk()
+            ->assertSee('Pengetahuan chatbot');
     }
 
     public function test_staf_di_luar_admin_tidak_bisa_membuka_kelola_pengetahuan(): void
     {
-        $respon = $this->actingAs(User::factory()->role('petugas')->create())
-            ->get('/admin/chatbot-knowledge');
-
-        // Filament bisa menjawab 403 atau menyembunyikan resource-nya dengan 404 —
-        // yang penting bukan 200 dan isinya tidak bocor.
-        $this->assertContains($respon->getStatusCode(), [403, 404], 'staf non-admin tidak boleh masuk');
-        $respon->assertDontSee('basis pengetahuan');
+        $this->actingAs(User::factory()->role('petugas')->create())
+            ->get(route('admin.pengetahuan-chatbot.index'))
+            ->assertForbidden();
     }
 
     public function test_pertanyaan_cocok_dijawab_dari_basis_pengetahuan(): void

@@ -29,6 +29,11 @@
     --color-indigo-soft: #ececfb;
 }
 
+/* Tracking global sedikit negatif; utility tracking-* di elemen tetap menimpa nilai ini. */
+body {
+    letter-spacing: -0.01em;
+}
+
 /* Sidebar mengecil: state disimpan sebagai atribut <html data-collapsed>, diisi dari
    localStorage oleh skrip inline di layouts/app.blade.php sebelum paint (tanpa kedip). */
 .sidebar { transition: width .22s ease, padding .22s ease; }
@@ -39,6 +44,10 @@
    dan terlihat patah. visibility+opacity dengan jeda 80ms bikin teks menyusul rail. */
 .sidebar .hide-collapsed { white-space: nowrap; transition: opacity .18s ease .08s, visibility 0s linear .08s; }
 [data-collapsed] .sidebar .hide-collapsed { opacity: 0; visibility: hidden; transition: opacity .1s ease, visibility 0s; }
+
+/* Saat collapse, logo dan nama brand digantikan tombol toggle di rail sempit. */
+[data-collapsed] .sidebar .brand > span:first-child,
+[data-collapsed] .sidebar .brand-text { display: none; }
 
 /* Label "MENU" saat mengecil: tinggi+padding ikut mengecil bersama rail, bukan ditinggalkan
    (kalau ditinggalkan, jarak logo ke ikon pertama membengkak ~57px dan ikon terlalu turun)
@@ -68,9 +77,16 @@ a, button, input, select, textarea {
     transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
 }
 
-@keyframes isi-masuk { from { opacity: 0; transform: translateY(6px); } }
+@keyframes isi-masuk { from { opacity: 0; } }
 @media (prefers-reduced-motion: no-preference) {
     main { animation: isi-masuk .25s ease-out both; }
+}
+
+/* Halaman login: kartu masuk sekali saat halaman dimuat. Tanpa translateY agar tidak
+   memicu scrollbar sekejap saat kartu bergeser melewati 100vh. */
+@keyframes kartu-masuk { from { opacity: 0; transform: scale(.98); } }
+@media (prefers-reduced-motion: no-preference) {
+    .kartu-login { animation: kartu-masuk .5s cubic-bezier(.22, 1, .36, 1) both; }
 }
 /* Aksesibilitas: matikan semua gerak untuk pengguna yang meminta reduced motion. */
 @media (prefers-reduced-motion: reduce) {
@@ -92,3 +108,18 @@ a, button, input, select, textarea {
     opacity: 0; pointer-events: none; transition: opacity .15s ease; z-index: 40;
 }
 [data-collapsed] .nav-item:hover::after { opacity: 1; }
+
+/* Popup profil: fade + slide kecil; visibility ditunda saat menutup agar animasi keluar terlihat. */
+.profil-menu {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px) scale(.98);
+    transform-origin: top right;
+    transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s;
+}
+.profil-menu[data-open="true"] {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transition: opacity .15s ease, transform .15s ease, visibility 0s;
+}
