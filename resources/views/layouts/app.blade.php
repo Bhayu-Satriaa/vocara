@@ -17,13 +17,13 @@
                 ['label' => 'Dashboard', 'href' => route('dashboard'), 'ikon' => 'grid', 'aktif' => request()->routeIs('dashboard')],
             ];
             if (auth()->user()->punyaRole('petugas', 'admin')) {
+                $menu[] = ['label' => 'Pasien Baru', 'href' => route('petugas.pasien.create'), 'ikon' => 'user-plus', 'aktif' => request()->routeIs('petugas.pasien*')];
                 $menu[] = ['label' => 'Scan QR pasien', 'href' => route('petugas.scan'), 'ikon' => 'scan', 'aktif' => request()->routeIs('petugas.scan*')];
             }
             if (auth()->user()->punyaRole('admin')) {
-                $menu[] = ['label' => 'Panel admin', 'href' => url('/admin'), 'ikon' => 'panel', 'aktif' => request()->is('admin*')];
-                if (\Illuminate\Support\Facades\Route::has('admin.persetujuan-profil.index')) {
-                    $menu[] = ['label' => 'Persetujuan Profil', 'href' => route('admin.persetujuan-profil.index'), 'ikon' => 'user', 'aktif' => request()->routeIs('admin.persetujuan-profil*')];
-                }
+                $menu[] = ['label' => 'Akun staf', 'href' => route('admin.akun-staf.index'), 'ikon' => 'user-plus', 'aktif' => request()->routeIs('admin.akun-staf*')];
+                $menu[] = ['label' => 'Persetujuan profil', 'href' => route('admin.persetujuan-profil.index'), 'ikon' => 'user', 'aktif' => request()->routeIs('admin.persetujuan-profil*')];
+                $menu[] = ['label' => 'Pengetahuan chatbot', 'href' => route('admin.pengetahuan-chatbot.index'), 'ikon' => 'chat', 'aktif' => request()->routeIs('admin.pengetahuan-chatbot*')];
             }
             if (auth()->user()->punyaRole('pasien')) {
                 $menu[] = ['label' => 'Profil', 'href' => route('pasien.profil'), 'ikon' => 'user', 'aktif' => request()->routeIs('pasien.profil*')];
@@ -32,15 +32,19 @@
             }
         @endphp
 
-        <aside class="sidebar fixed inset-y-0 left-0 z-20 flex w-[264px] flex-col overflow-hidden bg-surface px-4 pb-5 pt-6 max-[820px]:hidden">
+        <aside class="sidebar fixed inset-y-0 left-0 z-20 flex w-[264px] flex-col overflow-hidden border-r border-line bg-surface px-4 pb-5 pt-6 max-[820px]:hidden">
             <div class="brand flex items-center gap-2.5 px-2">
                 <span class="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[10px] bg-primary text-white">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v18M3 12h18"/></svg>
                 </span>
-                <span class="hide-collapsed">
+                <span class="hide-collapsed brand-text">
                     <span class="block text-[15px] font-bold tracking-tight">Klinik Sehat</span>
                     <span class="block text-xs text-faint">Sistem Informasi</span>
                 </span>
+                <button id="toggle-sidebar" type="button" title="Ciutkan / lebarkan sidebar"
+                        class="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-slate-50 hover:text-ink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+                </button>
             </div>
 
             <p class="hide-collapsed nav-section px-2.5 pt-6 pb-2 text-[11px] font-semibold tracking-[.07em] text-faint uppercase">Menu</p>
@@ -54,11 +58,11 @@
                             @case('grid')
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
                             @break
+                            @case('user-plus')
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                            @break
                             @case('scan')
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M3 12h18"/></svg>
-                            @break
-                            @case('panel')
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
                             @break
                             @case('user')
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -74,59 +78,63 @@
                     </a>
                 @endforeach
             </nav>
-
-            <div class="mt-auto border-t border-line px-2 pt-3.5">
-                <div class="side-user flex items-center gap-2.5">
-                    <span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary">{{ $inisial }}</span>
-                    <span class="hide-collapsed leading-tight">
-                        <span class="block text-[13px] font-semibold">{{ auth()->user()->name }}</span>
-                        <span class="block text-xs text-muted">{{ auth()->user()->role }}</span>
-                    </span>
-                </div>
-            </div>
         </aside>
     @endauth
 
     <div class="main min-h-screen @auth ml-[264px] max-[820px]:ml-0 @endauth">
-        <header class="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b border-line bg-slate-50 pl-4 pr-10 max-[820px]:pr-6">
+        @auth
+        <header class="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b border-line bg-surface pl-4 pr-10 max-[820px]:pr-6">
             <div class="flex min-w-0 items-center gap-3.5">
-                @auth
-                    <button id="toggle-sidebar" type="button" title="Ciutkan / lebarkan sidebar"
-                            class="flex h-[38px] w-[38px] shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-line bg-slate-50 font-semibold text-ink hover:bg-slate-100">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
-                    </button>
-                @endauth
                 <p class="truncate text-[13px] text-faint">@yield('crumb', 'Sistem Klinik Kesehatan')</p>
             </div>
 
-            <div class="flex items-center gap-3.5">
+            <div class="flex items-center">
                 @auth
-                    <span class="text-right leading-tight">
-                        <span class="block text-[13px] font-semibold">{{ auth()->user()->name }}</span>
-                        <span class="block text-xs text-muted">{{ auth()->user()->role }}</span>
-                    </span>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="h-[38px] cursor-pointer rounded-[9px] border border-line bg-slate-50 px-3.5 text-[13.5px] font-semibold text-ink hover:bg-slate-100">
-                            Keluar
+                    <div class="relative">
+                        <button id="tombol-profil" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menu-profil" aria-label="Menu profil {{ auth()->user()->name }}"
+                                class="flex items-center gap-2.5 rounded-xl p-1.5 hover:bg-slate-50">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary ring-1 ring-primary/15">{{ $inisial }}</span>
+                            <span class="hidden text-left leading-tight sm:block">
+                                <span class="block text-[13px] font-semibold text-ink">{{ auth()->user()->name }}</span>
+                                <span class="block text-xs text-muted">{{ auth()->user()->role }}</span>
+                            </span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-faint" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                         </button>
-                    </form>
+
+                        <div id="menu-profil" role="menu" data-open="false" aria-hidden="true" class="profil-menu absolute right-0 z-20 mt-2 w-56 rounded-xl border border-line bg-surface p-1.5 shadow-lg">
+                            <div class="px-3 py-2.5">
+                                <p class="truncate text-[13px] font-semibold text-ink">{{ auth()->user()->name }}</p>
+                                <p class="mt-0.5 truncate text-[12px] text-muted">{{ auth()->user()->email }}</p>
+                            </div>
+                            <div class="my-1 border-t border-line-soft"></div>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" role="menuitem" class="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-ink hover:bg-slate-50">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-muted" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+                                    Keluar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 @endauth
             </div>
         </header>
+        @endauth
 
-        <main class="mx-auto max-w-[1180px] px-10 pt-9 pb-14 max-[1080px]:px-6 max-[1080px]:pt-7">
-            @if (session('sukses'))
-                <div class="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                    {{ session('sukses') }}
-                </div>
-            @endif
+        <main class="@yield('main-class', 'mx-auto max-w-[1180px] px-10 pt-9 pb-14 max-[1080px]:px-6 max-[1080px]:pt-7')">
+            @unless (request()->routeIs('login'))
+                @if (session('sukses'))
+                    <div class="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        {{ session('sukses') }}
+                    </div>
+                @endif
 
-            @if (session('peringatan'))
-                <div class="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    {{ session('peringatan') }}
-                </div>
-            @endif
+                @if (session('peringatan'))
+                    <div class="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        {{ session('peringatan') }}
+                    </div>
+                @endif
+            @endunless
 
             @yield('isi')
         </main>

@@ -79,7 +79,7 @@ class PemindaianQrTest extends TestCase
             ->assertOk()
             ->assertSee('RM-000001')
             ->assertSee('Budi Santoso')
-            ->assertSee('belum terverifikasi');
+            ->assertSee('Belum Verifikasi KTP');
     }
 
     public function test_verifikasi_ktp_mengubah_status_dan_mencatat_pelakunya(): void

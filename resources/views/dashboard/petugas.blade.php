@@ -42,11 +42,16 @@
                     </span>
                     <span class="pt-2 text-sm font-medium">Verifikasi identitas pasien dengan mencocokkan KTP.</span>
                 </li>
-                <li class="flex gap-3.5 py-3.5">
-                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-green-soft text-green-ink">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
-                    </span>
-                    <span class="pt-2 text-sm font-medium">Daftarkan pasien walk-in (QR dibuat otomatis, bisa dicetak atau dikirim).</span>
+                <li class="flex items-center justify-between gap-3.5 py-3.5">
+                    <div class="flex gap-3.5 items-center">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-green-soft text-green-ink">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+                        </span>
+                        <span class="text-sm font-medium">Daftarkan pasien walk-in (QR dibuat otomatis, bisa dicetak atau dikirim).</span>
+                    </div>
+                    <a href="{{ route('petugas.pasien.create') }}" class="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 no-underline">
+                        Daftar Pasien
+                    </a>
                 </li>
                 <li class="flex gap-3.5 py-3.5">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-indigo-soft text-indigo-ink">

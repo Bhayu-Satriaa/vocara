@@ -265,6 +265,6 @@ class MultiprofilPasienTest extends TestCase
             ->assertOk()
             ->assertDontSee('NIK')
             ->assertSee($pasien->no_rm)
-            ->assertSee('Tanggal lahir');
+            ->assertSee('Tanggal Lahir');
     }
 }
