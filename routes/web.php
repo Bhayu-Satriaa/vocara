@@ -13,8 +13,7 @@ use Illuminate\Support\Facades\Route;
 |   routes/petugas.php   — wilayah petugas pendaftaran/kasir
 |   routes/dokter.php    — wilayah dokter
 |   routes/apoteker.php  — wilayah apoteker
-|   routes/admin.php     — wilayah admin (panel Filament didaftarkan di
-|                          AdminPanelProvider, bukan di sini)
+|   routes/admin.php     — wilayah admin (halaman /dashboard admin)
 |
 | Keenam file itu didaftarkan di bootstrap/app.php.
 */

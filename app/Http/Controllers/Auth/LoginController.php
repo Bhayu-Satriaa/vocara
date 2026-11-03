@@ -49,7 +49,7 @@ class LoginController extends Controller
         $request->session()->regenerate();
         ActivityLog::catat('login', 'Login staf sebagai '.$user->role);
 
-        // Semua staf (termasuk admin) mendarat di dashboard Blade; panel Filament dibuka dari menu.
+        // Semua staf (termasuk admin) mendarat di dashboard Blade.
         return redirect()->intended(route('dashboard'));
     }
 

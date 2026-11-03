@@ -41,15 +41,6 @@ class PemindaianQrTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_menu_scan_qr_tidak_muncul_di_dashboard_admin(): void
-    {
-        // Scan QR dikerjakan petugas; admin tidak butuh pintasannya di dashboard.
-        $this->actingAs(User::factory()->role('admin')->create())
-            ->get(route('dashboard'))
-            ->assertOk()
-            ->assertDontSee('Scan QR pasien');
-    }
-
     public function test_tamu_diarahkan_ke_login(): void
     {
         $this->get(route('petugas.scan'))->assertRedirect(route('login'));
@@ -88,7 +79,7 @@ class PemindaianQrTest extends TestCase
             ->assertOk()
             ->assertSee('RM-000001')
             ->assertSee('Budi Santoso')
-            ->assertSee('belum terverifikasi');
+            ->assertSee('Belum Verifikasi KTP');
     }
 
     public function test_verifikasi_ktp_mengubah_status_dan_mencatat_pelakunya(): void

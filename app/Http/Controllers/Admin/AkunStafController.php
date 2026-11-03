@@ -3,81 +3,69 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
-/**
- * Kelola akun staf (admin, petugas, dokter, apoteker) dari dashboard admin.
- *
- * Sebelumnya fitur ini memakai tampilan default panel Filament; sekarang
- * bentuknya Blade + Tailwind seperti halaman admin lain. Akun pasien tidak
- * pernah muncul di sini karena pasien mendaftar sendiri lewat Google.
- */
 class AkunStafController extends Controller
 {
-    public function index(Request $request): View
+    /** Daftar akun staf (pasien tidak muncul di sini). */
+    public function index(): View
     {
-        $role = (string) $request->query('role', 'semua');
-
         $akun = User::query()
             ->whereIn('role', User::ROLE_STAF)
-            ->when(in_array($role, User::ROLE_STAF, true), fn ($query) => $query->where('role', $role))
             ->orderBy('role')
             ->orderBy('name')
-            ->paginate(15)
-            ->withQueryString();
+            ->paginate(15);
 
-        return view('admin.akun-staf', [
-            'akun' => $akun,
-            'roleFilter' => $role,
-        ]);
+        return view('admin.akun-staf.index', ['akun' => $akun]);
     }
 
     public function create(): View
     {
-        return view('admin.akun-staf-form', ['staf' => new User(['role' => 'petugas'])]);
+        return view('admin.akun-staf.create', [
+            'user' => new User(['role' => 'petugas', 'is_active' => true]),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:150', 'unique:users,email'],
-            'role' => ['required', Rule::in(User::ROLE_STAF)],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        $data = $this->validasi($request);
 
-        $data['is_active'] = $request->boolean('is_active');
+        User::create($data);
 
-        // Password di-hash otomatis oleh cast 'hashed' di model User.
-        $staf = User::create($data);
-
-        ActivityLog::catat('tambah_akun', "Buat akun {$staf->role}: {$staf->email}", $staf);
-
-        return redirect()->route('admin.akun-staf.index')->with('sukses', "Akun {$staf->email} dibuat.");
+        return redirect()->route('admin.akun-staf.index')
+            ->with('sukses', "Akun {$data['name']} berhasil dibuat.");
     }
 
-    public function edit(User $staf): View
+    public function edit(User $user): View
     {
-        abort_unless($staf->staf(), 404);
+        abort_unless($user->staf(), 404);
 
-        return view('admin.akun-staf-form', ['staf' => $staf]);
+        return view('admin.akun-staf.edit', ['user' => $user]);
     }
 
-    public function update(Request $request, User $staf): RedirectResponse
+    public function update(Request $request, User $user): RedirectResponse
     {
-        abort_unless($staf->staf(), 404);
+        abort_unless($user->staf(), 404);
 
+        $user->update($this->validasi($request, $user));
+
+        return redirect()->route('admin.akun-staf.index')
+            ->with('sukses', "Akun {$user->name} diperbarui.");
+    }
+
+    /** Saat edit, password boleh dikosongkan dan password lama tetap dipakai. */
+    private function validasi(Request $request, ?User $user = null): array
+    {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($staf->id)],
+            'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($user?->id)],
             'role' => ['required', Rule::in(User::ROLE_STAF)],
-            // Dikosongkan = password lama tetap dipakai.
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
+            'is_active' => ['nullable', 'boolean'],
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
@@ -86,23 +74,6 @@ class AkunStafController extends Controller
             unset($data['password']);
         }
 
-        $staf->update($data);
-
-        ActivityLog::catat('ubah_akun', "Ubah akun {$staf->role}: {$staf->email}", $staf);
-
-        return redirect()->route('admin.akun-staf.index')->with('sukses', "Akun {$staf->email} diperbarui.");
-    }
-
-    /** Akun nonaktif tidak bisa masuk, baik ke dashboard maupun panel admin. */
-    public function toggleAktif(User $staf): RedirectResponse
-    {
-        abort_unless($staf->staf(), 404);
-
-        $staf->update(['is_active' => ! $staf->is_active]);
-
-        $aksi = $staf->is_active ? 'Aktifkan' : 'Nonaktifkan';
-        ActivityLog::catat('ubah_akun', "{$aksi} akun {$staf->role}: {$staf->email}", $staf);
-
-        return back()->with('sukses', "Akun {$staf->email} ".($staf->is_active ? 'diaktifkan' : 'dinonaktifkan').'.');
+        return $data;
     }
 }
