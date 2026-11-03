@@ -11,14 +11,30 @@
             <p class="mt-1 text-sm text-muted">Buat dan ubah akun dokter, petugas, apoteker, dan admin.</p>
         </div>
 
-        <div class="overflow-hidden rounded-[14px] border border-line bg-surface shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-                <p class="text-[13px] font-medium text-muted">{{ $akun->total() }} akun staf</p>
-                <a href="{{ route('admin.akun-staf.create') }}"
-                   class="inline-flex h-[34px] items-center gap-2 rounded-[8px] bg-primary px-3.5 text-[13px] font-semibold text-white no-underline hover:bg-primary-hover">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                    Tambah akun
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div class="flex flex-1 overflow-x-auto border-b border-line text-[13px] font-medium">
+                <a href="{{ route('admin.akun-staf.index') }}"
+                   class="-mb-px whitespace-nowrap border-b-2 px-4 py-2.5 no-underline transition {{ $roleFilter === 'semua' ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted hover:text-ink' }}">
+                    Semua ({{ $jumlah }})
                 </a>
+                @foreach (\App\Models\User::ROLE_STAF as $r)
+                    <a href="{{ route('admin.akun-staf.index', ['role' => $r]) }}"
+                       class="-mb-px whitespace-nowrap border-b-2 px-4 py-2.5 capitalize no-underline transition {{ $roleFilter === $r ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted hover:text-ink' }}">
+                        {{ $r }}
+                    </a>
+                @endforeach
+            </div>
+
+            <a href="{{ route('admin.akun-staf.create') }}"
+               class="mb-px inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[8px] bg-primary px-3.5 text-[13px] font-semibold text-white no-underline hover:bg-primary-hover">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                Tambah akun
+            </a>
+        </div>
+
+        <div class="overflow-hidden rounded-[14px] border border-line bg-surface shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+            <div class="border-b border-line px-5 py-3.5">
+                <p class="text-[13px] font-medium text-muted">{{ $akun->total() }} akun staf</p>
             </div>
 
             <div class="overflow-x-auto">

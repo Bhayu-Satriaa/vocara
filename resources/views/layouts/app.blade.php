@@ -14,21 +14,25 @@
             $inisial = collect(explode(' ', auth()->user()->name))
                 ->filter()->map(fn ($kata) => mb_substr($kata, 0, 1))->take(2)->implode('');
             $menu = [
-                ['label' => 'Dashboard', 'href' => route('dashboard'), 'ikon' => 'grid', 'aktif' => request()->routeIs('dashboard')],
+                ['label' => 'Dashboard', 'href' => route('dashboard'), 'ikon' => 'grid', 'aktif' => request()->routeIs('dashboard'), 'grup' => 'Utama'],
             ];
+            if (auth()->user()->punyaRole('admin')) {
+                $menu[] = ['label' => 'Data pasien', 'href' => route('admin.pasien.index'), 'ikon' => 'user', 'aktif' => request()->routeIs('admin.pasien*'), 'grup' => 'Pendaftaran'];
+            }
             if (auth()->user()->punyaRole('petugas', 'admin')) {
-                $menu[] = ['label' => 'Pasien Baru', 'href' => route('petugas.pasien.create'), 'ikon' => 'user-plus', 'aktif' => request()->routeIs('petugas.pasien*')];
-                $menu[] = ['label' => 'Scan QR pasien', 'href' => route('petugas.scan'), 'ikon' => 'scan', 'aktif' => request()->routeIs('petugas.scan*')];
+                $menu[] = ['label' => 'Pasien Baru', 'href' => route('petugas.pasien.create'), 'ikon' => 'user-plus', 'aktif' => request()->routeIs('petugas.pasien*'), 'grup' => 'Pendaftaran'];
+                $menu[] = ['label' => 'Scan QR pasien', 'href' => route('petugas.scan'), 'ikon' => 'scan', 'aktif' => request()->routeIs('petugas.scan*'), 'grup' => 'Pendaftaran'];
             }
             if (auth()->user()->punyaRole('admin')) {
-                $menu[] = ['label' => 'Akun staf', 'href' => route('admin.akun-staf.index'), 'ikon' => 'user-plus', 'aktif' => request()->routeIs('admin.akun-staf*')];
-                $menu[] = ['label' => 'Persetujuan profil', 'href' => route('admin.persetujuan-profil.index'), 'ikon' => 'user', 'aktif' => request()->routeIs('admin.persetujuan-profil*')];
-                $menu[] = ['label' => 'Pengetahuan chatbot', 'href' => route('admin.pengetahuan-chatbot.index'), 'ikon' => 'chat', 'aktif' => request()->routeIs('admin.pengetahuan-chatbot*')];
+                $menu[] = ['label' => 'Persetujuan profil', 'href' => route('admin.persetujuan-profil.index'), 'ikon' => 'user', 'aktif' => request()->routeIs('admin.persetujuan-profil*'), 'grup' => 'Kelola'];
+                $menu[] = ['label' => 'Jadwal dokter', 'href' => route('admin.jadwal-dokter.index'), 'ikon' => 'kalender', 'aktif' => request()->routeIs('admin.jadwal-dokter*'), 'grup' => 'Kelola'];
+                $menu[] = ['label' => 'Akun staf', 'href' => route('admin.akun-staf.index'), 'ikon' => 'user-plus', 'aktif' => request()->routeIs('admin.akun-staf*'), 'grup' => 'Kelola'];
+                $menu[] = ['label' => 'Pengetahuan chatbot', 'href' => route('admin.pengetahuan-chatbot.index'), 'ikon' => 'chat', 'aktif' => request()->routeIs('admin.pengetahuan-chatbot*'), 'grup' => 'Kelola'];
             }
             if (auth()->user()->punyaRole('pasien')) {
-                $menu[] = ['label' => 'Profil', 'href' => route('pasien.profil'), 'ikon' => 'user', 'aktif' => request()->routeIs('pasien.profil*')];
-                $menu[] = ['label' => 'Kartu QR', 'href' => route('pasien.qr'), 'ikon' => 'kartu', 'aktif' => request()->routeIs('pasien.qr')];
-                $menu[] = ['label' => 'Tanya chatbot', 'href' => route('pasien.chat'), 'ikon' => 'chat', 'aktif' => request()->routeIs('pasien.chat*')];
+                $menu[] = ['label' => 'Profil', 'href' => route('pasien.profil'), 'ikon' => 'user', 'aktif' => request()->routeIs('pasien.profil*'), 'grup' => 'Layanan'];
+                $menu[] = ['label' => 'Kartu QR', 'href' => route('pasien.qr'), 'ikon' => 'kartu', 'aktif' => request()->routeIs('pasien.qr'), 'grup' => 'Layanan'];
+                $menu[] = ['label' => 'Tanya chatbot', 'href' => route('pasien.chat'), 'ikon' => 'chat', 'aktif' => request()->routeIs('pasien.chat*'), 'grup' => 'Layanan'];
             }
         @endphp
 
@@ -47,10 +51,14 @@
                 </button>
             </div>
 
-            <p class="hide-collapsed nav-section px-2.5 pt-6 pb-2 text-[11px] font-semibold tracking-[.07em] text-faint uppercase">Menu</p>
-
             <nav class="flex flex-col gap-0.5">
                 @foreach ($menu as $item)
+                    @php
+                        $grupBaru = ($item['grup'] ?? '') !== ($menu[$loop->index - 1]['grup'] ?? null);
+                    @endphp
+                    @if ($grupBaru)
+                        <p class="hide-collapsed nav-section px-2.5 {{ $loop->first ? 'pt-6' : 'pt-5' }} pb-1.5 text-[11px] font-semibold tracking-[.07em] text-faint uppercase">{{ $item['grup'] }}</p>
+                    @endif
                     <a href="{{ $item['href'] }}" data-label="{{ $item['label'] }}"
                         @if ($item['aktif']) aria-current="page" @endif
                         class="nav-item flex h-10 items-center gap-2.5 rounded-[10px] px-2.5 text-sm no-underline {{ $item['aktif'] ? 'bg-primary-soft font-semibold text-primary' : 'text-muted hover:bg-slate-50 hover:text-ink' }}">
@@ -69,6 +77,9 @@
                             @break
                             @case('kartu')
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                            @break
+                            @case('kalender')
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                             @break
                             @case('chat')
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H8l-5 3 1.4-4.2A8 8 0 1 1 21 12z"/></svg>
@@ -139,5 +150,6 @@
             @yield('isi')
         </main>
     </div>
+    @stack('scripts')
 </body>
 </html>
