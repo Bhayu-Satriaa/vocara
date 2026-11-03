@@ -77,8 +77,10 @@ git push -u origin juli/design-login         # lihat bagian 6 soal cara push
 
 ## 5. Yang dicek reviewer
 
-1. `php artisan test` lulus (baseline repo: **58 test** — PR tidak boleh
-   menurunkannya).
+1. `php artisan test` lulus (baseline repo: **72 test** — turun dari 85 setelah
+   `PanelAdminTest.php` (13 test Filament) dihapus bersama pencabutan panel Filament di
+   PR #8; test Blade pengganti untuk `/dashboard/akun-staf` belum ditulis). PR tidak boleh
+   menurunkannya lebih jauh.
 2. Tidak ada `.env`, `vendor/`, `public/build`, atau data pribadi ikut ter-commit.
 3. Route baru dibatasi role yang benar (`middleware('role:...')`), dan halaman
    pasien tetap di balik `middleware('profil')`.
@@ -98,15 +100,21 @@ git push -u origin juli/design-login         # lihat bagian 6 soal cara push
   (`D:\laragon\bin\php\php-8.5.12-Win32-vs17-x64\php.exe`); 8.3.12 gagal
   `platform_check`.
 - Setelah mengubah Blade: `php artisan view:clear`.
-- Setelah clone baru: `npm install && npm run build` dan
-  `php artisan filament:assets` (aset panel).
+- Setelah clone baru: `composer install` (Filament sudah tidak dipakai, jadi tidak ada
+  lagi langkah `filament:assets`), lalu `npm install && npm run build`.
+- **Setelah menarik perubahan yang mencabut paket (mis. Filament/Livewire), wajib:**
+  `composer install` **lalu** `php artisan view:clear`. View Blade yang sudah ter-compile
+  masih memanggil kelas Livewire, dan tanpa `view:clear` semua halaman jadi 500 dengan
+  `Class "Livewire\Mechanisms\ExtendBlade\ExtendBlade" not found` (pernah terjadi 3 Nov 2026:
+  20 test gagal, 50 berkas di `storage/framework/views` masih menyebut Livewire).
 - Login Google pasien butuh kredensial di `.env` sendiri; `.env` tidak pernah
   di-commit dan tidak pernah dibagikan.
 
 ## 7. Urutan modul dan pemiliknya
 
-Sudah jadi: skema + migrasi, model, seeder, login staf multi-role, panel admin
-Filament, login Google pasien + kartu QR, dan **scan QR + verifikasi KTP petugas**.
+Sudah jadi: skema + migrasi, model, seeder, login staf multi-role, dashboard admin
+Blade (`/dashboard`), login Google pasien + kartu QR, **scan QR + verifikasi KTP petugas**,
+**pendaftaran pasien walk-in oleh petugas**, dan **chatbot janji temu (model 9Router)**.
 
 Sedang / akan dikerjakan:
 
@@ -124,7 +132,7 @@ Belum ada pemiliknya — perlu keputusan di pertemuan:
 - Pemeriksaan dokter (SOAP, tanda vital, ICD-10, resep)
 - Farmasi / serah obat lewat QR (tanpa manajemen stok untuk sementara)
 - Pembayaran & kwitansi (admin; status lunas/belum lunas, metode transfer/cash)
-- Data master + statistik admin di panel Filament
+- Data master + statistik admin di `/dashboard`
 
 ## 8. Penanda demo
 

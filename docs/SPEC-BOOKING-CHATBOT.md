@@ -95,7 +95,8 @@ Ringkasan keluhan masuk `triage_results` (`ringkasan_keluhan`, `poli_disarankan`
 - `app/Services/ChatbotService.php` (Fase 1 pencocokan FAQ + Fase 3 orkestrasi tool)
 - `app/Services/AsistenChat.php` (kalau perlu: pemanggilan model 9Router)
 - `app/Http/Controllers/Pasien/ChatController.php` — `index`, `kirim`
-- `app/Filament/Resources/ChatbotKnowledgeResource` (admin) — Fase 1
+- `app/Http/Controllers/Admin/PengetahuanChatbotController` + `resources/views/admin/pengetahuan-chatbot/*`
+  (admin, Blade) — Fase 1 (sebelumnya resource Filament, dicabut lewat PR #8)
 - `routes/pasien.php`: `GET /chat`, `POST /chat/kirim`, `GET /janji` (daftar janji pasien)
 - `resources/views/pasien/chat.blade.php` (+ panel data janji)
 - Seeder `ChatbotKnowledgeSeeder` (FAQ contoh) dan seeder jadwal dokter untuk demo

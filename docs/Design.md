@@ -182,11 +182,12 @@ dari dokter (nama obat, dosis, aturan pakai). **Tidak ada tampilan stok** — ja
 menambah kolom stok, penanda "stok menipis", atau tombol stok masuk/keluar. Etiket obat
 tetap dicetak.
 
-**Kelompok admin** — data master & laporan di `routes/admin-klinik.php`, back office
-Filament v5 di `/admin` (`AdminPanelProvider`, di luar `resources/` tapi termasuk tampilan,
-jadi boleh disentuh). Dashboard admin memakai kartu angka pola di atas; ekspor PDF/Excel
-cukup tombol sekunder di kanan judul. Panel Filament masih tema bawaan (Amber) — bila di-
-redesign, ambil aksen `#1d4ed8` + latar `#f5f7fa` supaya menyatu.
+**Kelompok admin** — halaman Blade di `routes/admin.php`, semuanya berprefiks `/dashboard`
+(`/dashboard`, `/dashboard/akun-staf`, `/dashboard/pengetahuan-chatbot`,
+`/dashboard/persetujuan-profil`). Dashboard admin memakai kartu angka pola di atas; ekspor
+PDF/Excel cukup tombol sekunder di kanan judul. Semua memakai token warna di dokumen ini
+(aksen `#1d4ed8`, latar `#f5f7fa`) — **panel Filament sudah dicabut** (PR #8, 3 Nov 2026),
+jadi tidak ada lagi tema bawaan Filament (Amber) yang perlu diselaraskan.
 
 **Kelompok AI (chatbot & speech)** — gelembung percakapan: jawaban bot
 `bg-surface border border-line rounded-2xl`, pesan user `bg-primary text-white rounded-2xl`;

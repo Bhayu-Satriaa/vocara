@@ -8,14 +8,15 @@ untuk mempercepat registrasi dan check-in.
 Stack: **Laravel 13** (PHP) + Blade + **Tailwind CSS**, database **MySQL**
 (InnoDB, utf8mb4).
 
-> **Status: alur login, panel admin, dan scan QR sudah jalan.** Yang ada sekarang:
-> login staf multi-role (email + password), login pasien lewat **Google OAuth**,
-> halaman Lengkapi Profil (nomor WA wajib) + **multi-profile data diri** (diri sendiri
-> dan keluarga, bisa dipilih mana yang dipakai) + **kartu QR pasien dengan gambar QR**,
-> **panel admin Filament** di `/admin` (mulai dari resource akun staf), dan
-> **halaman scan QR petugas** di `/petugas/scan` (cari pasien dari token QR +
-> verifikasi KTP). Modul klinik lain (janji temu, pemeriksaan dokter, farmasi,
-> kasir) belum dibuat.
+> **Status: alur login, dashboard admin, scan QR, dan chatbot janji temu sudah jalan.**
+> Yang ada sekarang: login staf multi-role (email + password), login pasien lewat
+> **Google OAuth**, halaman Lengkapi Profil (nomor WA wajib) + **multi-profile data diri**
+> (diri sendiri dan keluarga, bisa dipilih mana yang dipakai) + **kartu QR pasien dengan
+> gambar QR**, **dashboard admin Blade** di `/dashboard` (akun staf, basis pengetahuan
+> chatbot, persetujuan profil), **halaman scan QR petugas** di `/petugas/scan` (cari pasien
+> dari token QR + verifikasi KTP), **pendaftaran pasien walk-in oleh petugas**, dan
+> **chatbot janji temu** di `/chat` yang dijawab model 9Router (jatuh ke jawaban FAQ kalau
+> gateway mati). Modul klinik lain (pemeriksaan dokter, farmasi, kasir) belum dibuat.
 
 ## Fitur ringkas
 
@@ -124,21 +125,23 @@ menu atas):
 Pemindai kamera belum dibuat — sementara token diketik/ditempel manual, jadi fitur
 QR sudah bisa diuji penuh tanpa kamera.
 
-## Panel admin (Filament)
+## Dashboard admin (Blade)
 
-Back office dibuat dengan **Filament v5** di `/admin`:
+Back office dibuat dengan **Blade + Tailwind** di bawah `/dashboard`
+(`routes/admin.php`, middleware `role:admin`):
 
-- Login panel pakai akun staf (`admin@klinik.test` / `password`). Semua staf aktif
-  boleh masuk panel, tapi **resource dibatasi per role**: resource "Akun staf"
-  (buat/edit akun dokter, petugas, apoteker) hanya untuk role `admin`.
-- Diminta Jian: **tampilan akan di-redesign** menyusul — sekarang masih tema
-  bawaan Filament (warna Amber).
-- Halaman Blade lama (`/admin/pengguna`) sudah dihapus; akun staf sekarang hanya
-  dikelola dari panel, dan setiap penambahan/perubahan akun tercatat di
-  `activity_logs`.
-- Aset Filament dipublikasikan dengan `php artisan filament:assets` (folder
-  `public/css|js|fonts/filament` di-`.gitignore`, jadi jalankan perintah itu setelah
-  clone kalau panel tampil tanpa CSS).
+- Login pakai akun staf (`admin@klinik.test` / `password`).
+- Halaman: `/dashboard` (ringkasan), `/dashboard/akun-staf` (buat/edit akun dokter,
+  petugas, apoteker), `/dashboard/pengetahuan-chatbot` (basis pengetahuan chatbot),
+  `/dashboard/persetujuan-profil` (pengajuan data diri pasien).
+- Setiap penambahan/perubahan akun tercatat di `activity_logs`.
+- **Panel Filament sudah dicabut** (PR #8, 3 Nov 2026) — paket `filament/filament`
+  tidak lagi dipakai, alamat `/admin` dan `/admin-klinik` sudah tidak ada, dan tidak
+  ada lagi perintah `php artisan filament:assets` yang perlu dijalankan.
+- **Setelah menarik perubahan ini, jalankan `composer install` LALU
+  `php artisan view:clear`.** View Blade lama masih memanggil kelas Livewire; kalau
+  cache-nya tidak dibuang, semua halaman 500 dengan
+  `Class "Livewire\Mechanisms\ExtendBlade\ExtendBlade" not found`.
 
 ## Dokumen
 

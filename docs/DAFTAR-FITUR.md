@@ -84,7 +84,7 @@ sebenarnya sudah habis. Ini penundaan, bukan pembatalan permanen.
 
 | Fitur | Status |
 |---|---|
-| Manajemen akun semua role (panel Filament di `/admin`) | ✅ Sudah jadi (akun staf) |
+| Manajemen akun semua role (halaman Blade `/dashboard/akun-staf`) | ✅ Sudah jadi (akun staf) |
 | Data master: poli, dokter, jadwal, tarif, ICD-10 | ✅ Sudah jadi (lewat seeder) / 🔜 CRUD lewat panel |
 | Dashboard statistik: kunjungan, penyakit terbanyak | 🔜 Direncanakan |
 | Pembayaran: toggle status (lunas / belum lunas) + metode (transfer / cash) + cetak kwitansi | 🔜 Direncanakan |
@@ -127,8 +127,9 @@ sebenarnya sudah habis. Ini penundaan, bukan pembatalan permanen.
   middleware pembatas role.
 - **Login pasien lewat Google** + halaman Lengkapi Profil + nomor rekam medis
   otomatis.
-- **Panel admin Filament v5** di `/admin` (manajemen akun staf, dibatasi per role,
-  perubahan akun tercatat di log).
+- **Dashboard admin Blade** di `/dashboard` (ringkasan, manajemen akun staf, basis
+  pengetahuan chatbot, persetujuan profil — dibatasi per role, perubahan akun tercatat
+  di log). Panel Filament dicabut lewat PR #8 (3 Nov 2026).
 - **Kartu QR pasien** dengan gambar QR (SVG) + tombol cetak.
 - **Scan QR + verifikasi KTP petugas** di `/petugas/scan`.
 - **Multi profil pasien** — satu akun memegang beberapa data diri, masing-masing
@@ -213,7 +214,6 @@ composer install
 cp .env.example .env && php artisan key:generate   # isi DB + kredensial Google sendiri
 npm install && npm run build
 php artisan migrate:fresh --seed
-php artisan filament:assets
 php artisan serve --host=0.0.0.0 --port=8000
 ```
 

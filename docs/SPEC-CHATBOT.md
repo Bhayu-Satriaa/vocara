@@ -76,11 +76,14 @@ beserta relasinya (`messages()`, `triageResult()`), jadi tidak perlu model baru.
 - **Controller** `App\Http\Controllers\Pasien\ChatController` — `index()`, `kirim()`.
 - **Service** `App\Services\ChatbotService` — logika pencocokan **satu tempat**, supaya
   bisa diuji tanpa HTTP dan nanti dipakai jalur suara (Tahap 3) juga.
-- **Admin** — resource Filament `ChatbotKnowledgeResource` (pola sama seperti
-  `UserResource` yang sudah ada: `canAccess()` khusus role `admin`) berisi **hanya
-  konten**: kategori, pertanyaan, jawaban, aktif/tidak. **Jangan** menaruh pengaturan
-  model/prompt/kunci di sini. Plus seeder `ChatbotKnowledgeSeeder` berisi ±8 FAQ contoh
-  (jam buka, syarat daftar, bawa KTP, cara pakai QR, alur pendaftaran, biaya, dsb).
+- **Admin** — halaman Blade `App\Http\Controllers\Admin\PengetahuanChatbotController` di
+  `/dashboard/pengetahuan-chatbot` (`routes/admin.php`, middleware `role:admin`) berisi
+  **hanya konten**: kategori, pertanyaan, jawaban, aktif/tidak. **Jangan** menaruh
+  pengaturan model/prompt/kunci di sini. Plus seeder `ChatbotKnowledgeSeeder` berisi ±8 FAQ
+  contoh (jam buka, syarat daftar, bawa KTP, cara pakai QR, alur pendaftaran, biaya, dsb).
+  *(Sebelum 3 Nov 2026 halaman ini berupa resource Filament `ChatbotKnowledgeResource`; Filament
+  dicabut lewat PR #8 dan diganti Blade di `/dashboard`. Test admin ditulis lewat HTTP post,
+  bukan Livewire.)*
 - Setelah mengubah Blade: `php artisan view:clear`.
 
 ## 6. Keamanan dan etika
@@ -114,7 +117,8 @@ Test yang harus ada:
 
 ## 8. Urutan pengerjaan (PR kecil, satu fitur tuntas)
 
-1. Seeder basis pengetahuan + resource Filament untuk admin (CRUD + aktif/nonaktif).
+1. Seeder basis pengetahuan + halaman admin (CRUD + aktif/nonaktif) — sekarang Blade
+   `/dashboard/pengetahuan-chatbot` (dulu resource Filament, dicabut PR #8).
 2. Halaman chat pasien + penyimpanan percakapan/pesan (belum ada pencocokan).
 3. `ChatbotService` pencocokan + pesan baku + disclaimer.
 4. Test 1–9 di atas, lalu perbarui `docs/FEATURES.md` (bagian chatbot) dan
