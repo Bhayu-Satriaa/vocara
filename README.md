@@ -13,7 +13,7 @@ Stack: **Laravel 13** (PHP) + Blade + **Tailwind CSS**, database **MySQL**
 > **Google OAuth**, halaman Lengkapi Profil (nomor WA wajib) + **multi-profile data diri**
 > (diri sendiri dan keluarga, bisa dipilih mana yang dipakai) + **kartu QR pasien dengan
 > gambar QR**, **dashboard admin Blade** di `/dashboard` (akun staf, basis pengetahuan
-> chatbot, persetujuan profil), **halaman scan QR petugas** di `/petugas/scan` (cari pasien
+> chatbot, persetujuan profil), **halaman scan QR petugas** di `/dashboard/scan` (cari pasien
 > dari token QR + verifikasi KTP), **pendaftaran pasien walk-in oleh petugas**, dan
 > **chatbot janji temu** di `/chat` yang dijawab model 9Router (jatuh ke jawaban FAQ kalau
 > gateway mati). Modul klinik lain (pemeriksaan dokter, farmasi, kasir) belum dibuat.
@@ -106,8 +106,8 @@ Akun **pasien** tidak dibuat lewat seeder: pasien mendaftar sendiri lewat Google
 
 ## Scan QR pasien (petugas)
 
-Role `petugas` dan `admin` punya halaman `/petugas/scan` (tautan **Scan QR** di
-menu atas):
+Role `petugas` dan `admin` punya halaman `/dashboard/scan` (sebelumnya `/petugas/scan`;
+tautan **Scan QR** di menu atas):
 
 1. Pasien membuka **Kartu QR** miliknya — gambarnya dibuat paket
    `simplesoftwareio/simple-qrcode` (format SVG). Isi QR hanya token acak (UUID),

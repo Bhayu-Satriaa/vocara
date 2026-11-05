@@ -64,7 +64,7 @@
 
             <p class="mt-4 text-xs text-faint">
                 QR dibuat oleh paket <span class="font-mono">simplesoftwareio/simple-qrcode</span> (disetujui Jian).
-                Petugas memindainya di halaman <span class="font-mono">/petugas/scan</span>.
+                Petugas memindainya di halaman <span class="font-mono">Scan QR</span> petugas.
             </p>
         </div>
 

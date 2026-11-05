@@ -105,7 +105,7 @@ sebenarnya sudah habis. Ini penundaan, bukan pembatalan permanen.
   lengkapi profil (nomor WA) → QR dibuat otomatis berstatus `belum` → saat datang
   pertama petugas mencocokkan KTP → status `terverifikasi`.
 - **Alur QR:** QR berisi **token acak UUID** (`patients.qr_token`), bukan NIK atau
-  data medis. Petugas memindai di `/petugas/scan` → data pasien muncul → tombol
+  data medis. Petugas memindai di `/dashboard/scan` (sebelumnya `/petugas/scan`) → data pasien muncul → tombol
   verifikasi KTP. Setiap pemindaian dicatat di `qr_scan_logs`, setiap tindakan di
   `activity_logs`.
 - **Alur status kunjungan:** `booking → menunggu → diperiksa → farmasi → pembayaran
@@ -131,10 +131,10 @@ sebenarnya sudah habis. Ini penundaan, bukan pembatalan permanen.
   pengetahuan chatbot, persetujuan profil — dibatasi per role, perubahan akun tercatat
   di log). Panel Filament dicabut lewat PR #8 (3 Nov 2026).
 - **Kartu QR pasien** dengan gambar QR (SVG) + tombol cetak.
-- **Scan QR + verifikasi KTP petugas** di `/petugas/scan`.
+- **Scan QR + verifikasi KTP petugas** di `/dashboard/scan` (sebelumnya `/petugas/scan`).
 - **Multi profil pasien** — satu akun memegang beberapa data diri, masing-masing
   bernomor RM dan QR sendiri, dengan pemilihan profil aktif di `/profil`.
-- **53 test otomatis lulus (205 assertion)** — mencakup login staf, panel admin,
+- **72 test otomatis lulus (285 assertion)** (naik jadi 88 setelah PR #9–#12) — mencakup login staf, panel admin,
   login Google pasien, profil pasien, pemindaian QR, dan multi profil.
 
 ## 5. Keputusan teknis yang sudah final
@@ -218,5 +218,5 @@ php artisan serve --host=0.0.0.0 --port=8000
 ```
 
 Akun demo (password semuanya `password`): `admin@klinik.test`, `petugas@klinik.test`,
-`apoteker@klinik.test`, `dokter.ayu@klinik.test`. Halaman pasien `/`, panel admin
-`/admin`, scan QR petugas `/petugas/scan`.
+`apoteker@klinik.test`, `dokter.ayu@klinik.test`. Halaman pasien `/`, dashboard admin
+`/dashboard`, scan QR petugas `/dashboard/scan` (sebelumnya `/admin` dan `/petugas/scan`).

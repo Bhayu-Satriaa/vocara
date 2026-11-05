@@ -164,7 +164,7 @@ kartu ringkasan + daftar baris (`divide-line-soft`); nomor RM selalu `font-mono`
 Status kartu QR: *belum terverifikasi* → pill `bg-amber-soft text-amber-ink`,
 *terverifikasi* → `bg-green-soft text-green-ink`. Jangan tambahkan field NIK.
 
-**Kelompok petugas** — `routes/petugas.php`. `/petugas/scan` sudah jadi, jadikan acuan form (label `text-[12.5px] font-semibold`, input `h-10`, tombol utama
+**Kelompok petugas** — `routes/petugas.php`. Halaman scan `/dashboard/scan` (sebelumnya `/petugas/scan`) sudah jadi, jadikan acuan form (label `text-[12.5px] font-semibold`, input `h-10`, tombol utama
 full-width). Modul antrean / konfirmasi booking menyusul: memakai pola **tabel**
 (lihat Kelompok dokter) plus badge status. Pembayaran dan kwitansi **bukan** wilayah
 petugas lagi — lihat Kelompok admin.

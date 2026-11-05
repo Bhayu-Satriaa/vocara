@@ -116,23 +116,28 @@ Sudah jadi: skema + migrasi, model, seeder, login staf multi-role, dashboard adm
 Blade (`/dashboard`), login Google pasien + kartu QR, **scan QR + verifikasi KTP petugas**,
 **pendaftaran pasien walk-in oleh petugas**, dan **chatbot janji temu (model 9Router)**.
 
+Menunggu merge (PR #9–#12, Ridwan, sudah lolos uji 81/84/88/88 test — **merge berurutan
+9 → 10 → 11 → 12** karena bertumpuk): data master pasien + filter akun staf, analitik
+dashboard per bulan, CRUD jadwal dokter, dan zona waktu `Asia/Makassar`. Dua di antaranya
+mengubah hal yang disebut dokumen: **URL petugas pindah ke `/dashboard/scan`** (dari
+`/petugas/scan`) dan `APP_TIMEZONE` masuk konfigurasi.
+
 Sedang / akan dikerjakan:
 
-- **Multi profil (Ridwan)** — dikerjakan **lebih dulu** karena mengubah asumsi
-  "1 akun = 1 pasien" yang saat ini dijaga database (`patients.user_id` UNIQUE).
-  Selama belum selesai, anggota lain **jangan** membangun fitur di atas asumsi itu.
-- **Chatbot + AI speech (Jian)** — fitur wajib, dikerjakan setelah modul inti.
-- **Design (Juli, dibantu Nabil)** — token design Hangat ditetapkan dulu di
-  `resources/css/app.css`, lalu halaman per halaman.
-- **Janji temu / booking (Nabil)**.
+- **AI speech / suara (Jian)** — ditahan atas keputusan Jian 31 Okt 2026. Rancangan
+  (Gemini Live `gemini-2.5-flash-native-audio-preview-12-2025`, suara `Kore`, cadangan
+  TTS/STT bawaan browser) ada di `docs/DECISIONS.md` dan `docs/ROADMAP.md`.
+- **Antrean petugas** — tombol check-in sudah ada di `/dashboard/scan`
+  (`petugas.scan.checkin`, dari pekerjaan Nabil); nomor antrean belum dibuat.
+- **Pemeriksaan dokter** (SOAP, tanda vital, ICD-10, resep) — belum ada pemilik.
+- **Farmasi / serah obat lewat QR** (tanpa manajemen stok untuk sementara) — belum ada pemilik.
+- **Pembayaran & kwitansi** (admin; toggle lunas/belum lunas + metode transfer/cash) —
+  belum ada pemilik.
 
-Belum ada pemiliknya — perlu keputusan di pertemuan:
-
-- Antrean & check-in petugas (nomor antrean, kunjungan masuk antrean)
-- Pemeriksaan dokter (SOAP, tanda vital, ICD-10, resep)
-- Farmasi / serah obat lewat QR (tanpa manajemen stok untuk sementara)
-- Pembayaran & kwitansi (admin; status lunas/belum lunas, metode transfer/cash)
-- Data master + statistik admin di `/dashboard`
+Sudah selesai dan ada pemiliknya: **multi profil pasien** (Ridwan, PR #4),
+**design + dashboard admin Blade** (Juli, PR #8), **pendaftaran walk-in & verifikasi KTP
+petugas** (Nabil), **chatbot janji temu + BookingService** (Jian, PR #7).
+**Data master & statistik admin** sedang menunggu merge (PR #9–#12, lihat catatan di atas).
 
 ## 8. Penanda demo
 
