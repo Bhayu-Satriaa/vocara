@@ -8,11 +8,13 @@ use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\Visit;
 use Carbon\Carbon;
+use Generator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * Otak chatbot: memanggil model dari gateway OpenAI-compatible (9Router lokal) dan
@@ -68,14 +70,7 @@ class AsistenChat
 
         $this->kunciTawaran = 'chat.tawaran.'.$percakapan->id;
 
-        $pesan = [['role' => 'system', 'content' => $this->promptSistem($pasien)]];
-
-        foreach ($percakapan->messages()->orderBy('id')->get()->slice(-self::KONTEKS_PESAN) as $baris) {
-            $pesan[] = [
-                'role' => $baris->pengirim === 'pengguna' ? 'user' : 'assistant',
-                'content' => $baris->isi,
-            ];
-        }
+        $pesan = $this->siapkanPesan($percakapan, $pasien);
 
         // Bawaan 'ai': jawaban dari model tanpa tool. Kalau ada tool yang dipanggil,
         // nilai ini ditimpa intent tool-nya ('tanya_jadwal', 'buat_janji', ...).
@@ -122,6 +117,204 @@ class AsistenChat
         return null;
     }
 
+    /**
+     * Versi streaming dari `balas()`: hasilkan potongan jawaban begitu tiba.
+     *
+     * Kejadian yang dihasilkan:
+     * - `['delta' => 'teks']`   — potongan jawaban untuk langsung ditampilkan
+     * - `['alat' => 'cek_jadwal']` — model sedang memakai tool (bisa ditampilkan sebagai status)
+     * - `['selesai' => true, 'isi' => '...', 'intent' => '...']`
+     * - `['gagal' => true]` — gateway bermasalah, pemanggil sebaiknya jatuh ke FAQ
+     *
+     * @return Generator<int, array<string, mixed>>
+     */
+    public function alirBalas(ChatConversation $percakapan, ?Patient $pasien): Generator
+    {
+        if (! $this->tersedia()) {
+            yield ['gagal' => true];
+
+            return;
+        }
+
+        $this->kunciTawaran = 'chat.tawaran.'.$percakapan->id;
+        $pesan = $this->siapkanPesan($percakapan, $pasien);
+        $intent = 'ai';
+        $teksRondeTerakhir = '';
+
+        for ($ronde = 0; $ronde < self::MAKS_RONDE; $ronde++) {
+            $jawaban = null;
+
+            foreach ($this->panggilModelAlir($pesan, $jawaban) as $kejadian) {
+                $teksRondeTerakhir .= $kejadian['delta'];
+
+                yield $kejadian;
+            }
+
+            if ($jawaban === null) {
+                yield ['gagal' => true];
+
+                return;
+            }
+
+            $toolCalls = $jawaban['tool_calls'] ?? [];
+
+            if ($toolCalls === []) {
+                yield ['selesai' => true, 'isi' => trim($teksRondeTerakhir), 'intent' => $intent];
+
+                return;
+            }
+
+            $pesan[] = array_filter([
+                'role' => 'assistant',
+                'content' => $jawaban['content'] ?? null,
+                'tool_calls' => $toolCalls,
+            ], fn ($nilai) => $nilai !== null);
+
+            foreach ($toolCalls as $panggilan) {
+                $nama = $panggilan['function']['name'] ?? '';
+                $argumen = json_decode((string) ($panggilan['function']['arguments'] ?? '{}'), true) ?: [];
+
+                $intent = $this->intentUntuk($nama);
+                $hasil = $this->jalankanTool($nama, $argumen, $pasien);
+
+                yield ['alat' => $nama];
+
+                $pesan[] = [
+                    'role' => 'tool',
+                    'tool_call_id' => $panggilan['id'] ?? '',
+                    'content' => json_encode($hasil, JSON_UNESCAPED_UNICODE),
+                ];
+            }
+
+            // Teks ronde tool tidak dihitung sebagai jawaban akhir.
+            $teksRondeTerakhir = '';
+        }
+
+        yield ['selesai' => true, 'isi' => trim($teksRondeTerakhir), 'intent' => $intent];
+    }
+
+    /** Susun daftar pesan (system + riwayat) yang dikirim ke model. */
+    private function siapkanPesan(ChatConversation $percakapan, ?Patient $pasien): array
+    {
+        $pesan = [['role' => 'system', 'content' => $this->promptSistem($pasien)]];
+
+        foreach ($percakapan->messages()->orderBy('id')->get()->slice(-self::KONTEKS_PESAN) as $baris) {
+            $pesan[] = [
+                'role' => $baris->pengirim === 'pengguna' ? 'user' : 'assistant',
+                'content' => $baris->isi,
+            ];
+        }
+
+        return $pesan;
+    }
+
+    /**
+     * Panggil model dengan `stream: true` dan hasilkan potongan teks.
+     *
+     * Pesan utuh (teks + tool_calls yang sudah dirangkai dari delta) dikembalikan lewat
+     * parameter `$hasil`, supaya alurnya sama dengan mode non-streaming.
+     *
+     * @param  array<int, array<string, mixed>>  $pesan
+     * @param  array<string, mixed>|null  $hasil
+     * @return Generator<int, array{delta: string}>
+     */
+    private function panggilModelAlir(array $pesan, ?array &$hasil): Generator
+    {
+        $hasil = null;
+        $model = array_unique(array_filter([config('services.llm.model'), config('services.llm.model_fallback')]));
+
+        foreach ($model as $nama) {
+            $respon = Http::withToken(config('services.llm.key'))
+                ->timeout((int) config('services.llm.timeout'))
+                ->withOptions(['stream' => true])
+                ->acceptJson()
+                ->post(rtrim((string) config('services.llm.base_url'), '/').'/chat/completions', array_filter([
+                    'model' => $nama,
+                    'messages' => $pesan,
+                    'tools' => $this->alat(),
+                    'max_tokens' => (int) config('services.llm.max_tokens'),
+                    'stream' => true,
+                    'reasoning_effort' => config('services.llm.reasoning_effort'),
+                ]));
+
+            if (! $respon->successful()) {
+                Log::warning('Gateway model menolak permintaan (mode streaming)', [
+                    'model' => $nama,
+                    'status' => $respon->status(),
+                    'body' => substr((string) $respon->body(), 0, 300),
+                ]);
+
+                continue;
+            }
+
+            $isi = '';
+            $toolCalls = [];
+            $badan = $respon->toPsrResponse()->getBody();
+
+            foreach ($this->uraiSse($badan) as $data) {
+                $delta = $data['choices'][0]['delta'] ?? [];
+
+                if (($delta['content'] ?? '') !== '') {
+                    $isi .= $delta['content'];
+
+                    yield ['delta' => $delta['content']];
+                }
+
+                // tool_calls tiba bertahap (per indeks): gabungkan potongan argumennya.
+                foreach ($delta['tool_calls'] ?? [] as $panggilan) {
+                    $indeks = (int) ($panggilan['index'] ?? 0);
+
+                    $toolCalls[$indeks]['id'] = $panggilan['id'] ?? ($toolCalls[$indeks]['id'] ?? 'call_'.$indeks);
+                    $toolCalls[$indeks]['type'] = 'function';
+                    $toolCalls[$indeks]['function']['name'] = $panggilan['function']['name'] ?? ($toolCalls[$indeks]['function']['name'] ?? '');
+                    $toolCalls[$indeks]['function']['arguments'] = ($toolCalls[$indeks]['function']['arguments'] ?? '').($panggilan['function']['arguments'] ?? '');
+                }
+            }
+
+            $hasil = ['content' => $isi, 'tool_calls' => array_values($toolCalls)];
+
+            return;
+        }
+    }
+
+    /**
+     * Baca badan balasan berformat SSE dan hasilkan tiap muatan JSON-nya.
+     *
+     * PSR-7 tidak menyediakan `readLine()`, jadi barisnya dipecah sendiri supaya
+     * tetap bekerja di atas stream apa pun (termasuk balasan palsu di test).
+     *
+     * @return Generator<int, array<string, mixed>>
+     */
+    private function uraiSse(StreamInterface $badan): Generator
+    {
+        $sisa = '';
+
+        while (! $badan->eof()) {
+            $sisa .= $badan->read(8192);
+
+            while (($pos = strpos($sisa, "\n")) !== false) {
+                $baris = trim(substr($sisa, 0, $pos));
+                $sisa = substr($sisa, $pos + 1);
+
+                if (! str_starts_with($baris, 'data:')) {
+                    continue;
+                }
+
+                $muatan = trim(substr($baris, 5));
+
+                if ($muatan === '' || $muatan === '[DONE]') {
+                    continue;
+                }
+
+                $data = json_decode($muatan, true);
+
+                if (is_array($data)) {
+                    yield $data;
+                }
+            }
+        }
+    }
+
     /** Panggil endpoint /chat/completions; kalau model utama gagal, coba model cadangan. */
     private function panggilModel(array $pesan): ?array
     {
@@ -136,12 +329,13 @@ class AsistenChat
                 $respon = Http::withToken(config('services.llm.key'))
                     ->timeout((int) config('services.llm.timeout'))
                     ->acceptJson()
-                    ->post(rtrim((string) config('services.llm.base_url'), '/').'/chat/completions', [
+                    ->post(rtrim((string) config('services.llm.base_url'), '/').'/chat/completions', array_filter([
                         'model' => $nama,
                         'messages' => $pesan,
                         'tools' => $this->alat(),
                         'max_tokens' => $anggaran,
-                    ]);
+                        'reasoning_effort' => config('services.llm.reasoning_effort'),
+                    ]));
 
                 if (! $respon->successful()) {
                     // Dicatat supaya kegagalan gateway bisa ditelusuri (tanpa menulis kunci).
@@ -413,7 +607,7 @@ class AsistenChat
         $faq = $this->basisPengetahuan();
 
         return <<<PROMPT
-        Kamu asisten klinik kesehatan bernama Rani. Jawab dalam Bahasa Indonesia, ramah dan singkat (maksimal 3 kalimat).
+        Kamu asisten klinik kesehatan bernama Rani. Jawab dalam Bahasa Indonesia, ramah dan singkat: maksimal 2 kalimat pendek, tanpa daftar/bullet/markdown kecuali pasien memintanya.
 
         Hari ini: {$hariIni->toDateString()} ({$hariIni->locale('id')->translatedFormat('l')}).
         {$profil}

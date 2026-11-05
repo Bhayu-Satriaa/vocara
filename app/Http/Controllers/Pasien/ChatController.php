@@ -8,9 +8,11 @@ use App\Models\ChatMessage;
 use App\Services\AsistenChat;
 use App\Services\BookingService;
 use App\Services\ChatbotService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Chat teks pasien dengan chatbot (dijawab model 9Router, cadangan FAQ).
@@ -39,7 +41,7 @@ class ChatController extends Controller
      * Simpan pertanyaan pasien, lalu jawab: lewat model AI kalau gateway hidup,
      * kalau tidak jatuh ke jawaban FAQ dari basis pengetahuan.
      */
-    public function kirim(Request $request, ChatbotService $chatbot, AsistenChat $asisten): RedirectResponse
+    public function kirim(Request $request, ChatbotService $chatbot, AsistenChat $asisten): RedirectResponse|JsonResponse
     {
         $data = $request->validate(
             ['pesan' => ['required', 'string', 'max:500']],
@@ -76,7 +78,118 @@ class ChatController extends Controller
             'intent' => $hasil['intent'],
         ]);
 
+        // Halaman chat memanggil lewat fetch dan mengharapkan JSON: tanpa muat ulang
+        // halaman, jadi tidak ada spinner di tab dan posisi scroll tidak melompat.
+        if ($request->wantsJson()) {
+            return response()->json([
+                'jawaban' => $hasil['isi'],
+                'intent' => $hasil['intent'],
+            ]);
+        }
+
         return redirect()->route('pasien.chat');
+    }
+
+    /**
+     * Jawab pertanyaan pasien dengan cara dialirkan (SSE).
+     *
+     * Dipakai halaman chat lewat fetch: teks muncul bertahap, halaman tidak dimuat
+     * ulang — jadi tidak ada spinner di tab dan posisi scroll tidak melompat.
+     */
+    public function alir(Request $request, ChatbotService $chatbot): StreamedResponse
+    {
+        $data = $request->validate(
+            ['pesan' => ['required', 'string', 'max:500']],
+            [
+                'pesan.required' => 'Tulis pertanyaanmu dulu.',
+                'pesan.max' => 'Pertanyaan terlalu panjang — maksimal 500 karakter.',
+            ],
+        );
+
+        $percakapan = $this->percakapanAktif($request);
+        $pasien = $request->user()->profilAktif();
+        $levelBuffer = ob_get_level();
+
+        ChatMessage::query()->create([
+            'conversation_id' => $percakapan->id,
+            'pengirim' => 'pengguna',
+            'isi' => $data['pesan'],
+            'tipe_input' => 'teks',
+        ]);
+
+        return response()->stream(function () use ($chatbot, $percakapan, $pasien, $data, $levelBuffer) {
+            ignore_user_abort(true);
+
+            $teks = '';
+            $intent = 'ai';
+            $asisten = app(AsistenChat::class);
+
+            foreach ($asisten->alirBalas($percakapan, $pasien) as $kejadian) {
+                if (isset($kejadian['delta'])) {
+                    $teks .= $kejadian['delta'];
+
+                    echo $this->peristiwaSse(['delta' => $kejadian['delta']]);
+                } elseif (isset($kejadian['alat'])) {
+                    echo $this->peristiwaSse(['alat' => $kejadian['alat']]);
+                } elseif (isset($kejadian['selesai'])) {
+                    $intent = $kejadian['intent'];
+                }
+
+                $this->kurasBuffer($levelBuffer);
+            }
+
+            if (trim($teks) === '') {
+                // Gateway bermasalah → jawab dari basis pengetahuan seperti jalur biasa.
+                $faq = $chatbot->cariJawaban($data['pesan']);
+                $teks = $faq?->jawaban ?? ChatbotService::JAWABAN_TIDAK_DIKENAL;
+                $intent = $faq ? 'faq' : 'tidak_dikenal';
+
+                echo $this->peristiwaSse(['delta' => $teks]);
+                $this->kurasBuffer($levelBuffer);
+            }
+
+            ChatMessage::query()->create([
+                'conversation_id' => $percakapan->id,
+                'pengirim' => 'bot',
+                'isi' => $teks,
+                'tipe_input' => 'teks',
+                'intent' => $intent,
+            ]);
+
+            echo $this->peristiwaSse(['selesai' => true, 'intent' => $intent]);
+            echo "data: [DONE]\n\n";
+
+            $this->kurasBuffer($levelBuffer);
+        }, 200, [
+            'Content-Type' => 'text/event-stream; charset=utf-8',
+            'Cache-Control' => 'no-cache, no-transform',
+            'X-Accel-Buffering' => 'no',
+        ]);
+    }
+
+    /** Satu baris peristiwa Server-Sent Events. */
+    private function peristiwaSse(array $muatan): string
+    {
+        return 'data: '.json_encode($muatan, JSON_UNESCAPED_UNICODE)."\n\n";
+    }
+
+    /**
+     * Kirim tiap potongan segera — jangan ditahan buffer PHP.
+     *
+     * Hanya buffer DI ATAS level yang tercatat saat permintaan masuk yang dibuang,
+     * supaya penangkapan output milik framework (mis. saat test) tetap utuh.
+     */
+    private function kurasBuffer(int $levelAwal = 0): void
+    {
+        if (app()->runningUnitTests()) {
+            return; // output sedang ditangkap framework test — jangan dikuras
+        }
+
+        while (ob_get_level() > $levelAwal) {
+            ob_end_flush();
+        }
+
+        flush();
     }
 
     /**

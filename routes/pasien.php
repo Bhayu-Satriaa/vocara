@@ -36,6 +36,10 @@ Route::middleware(['auth', 'role:pasien'])->group(function () {
     Route::post('/chat/kirim', [ChatController::class, 'kirim'])
         ->middleware('profil')
         ->name('pasien.chat.kirim');
+    // Jalur streaming (SSE) yang dipakai halaman chat lewat fetch.
+    Route::post('/chat/alir', [ChatController::class, 'alir'])
+        ->middleware('profil')
+        ->name('pasien.chat.alir');
     // Tutup percakapan sesi ini dan mulai layar kosong (riwayat tetap tersimpan).
     Route::post('/chat/baru', [ChatController::class, 'baru'])
         ->middleware('profil')

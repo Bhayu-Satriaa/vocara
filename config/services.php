@@ -33,9 +33,17 @@ return [
     'llm' => [
         'base_url' => env('LLM_BASE_URL', 'http://127.0.0.1:20128/v1'),
         'key' => env('LLM_API_KEY', '9router-lokal'),
-        'model' => env('LLM_MODEL', 'cmc/moonshotai/Kimi-K2.7-Code-Highspeed'),
-        'model_fallback' => env('LLM_MODEL_FALLBACK', 'cmc/zai-org/GLM-5.2-Fast'),
-        'max_tokens' => (int) env('LLM_MAX_TOKENS', 1200),
+        'model' => env('LLM_MODEL', 'cmc/zai-org/GLM-5.2-Fast'),
+        'model_fallback' => env('LLM_MODEL_FALLBACK', 'cmc/moonshotai/Kimi-K2.7-Code-Highspeed'),
+        'max_tokens' => (int) env('LLM_MAX_TOKENS', 800),
+        // Kosongkan (bawaan) — jangan dikirim. Catatan uji 5 Nov 2026: menambahkan
+        // reasoning_effort justru MEMICU jalur "berpikir" sehingga jawaban jadi 8-16 dtk,
+        // sedangkan tanpa parameter itu hanya 1,5-2,5 dtk.
+        'reasoning_effort' => env('LLM_REASONING_EFFORT'),
+        // Jalur streaming (SSE) sudah tersedia, tapi di 9Router lokal ini terukur lebih
+        // LAMBAT (8-17 dtk) daripada jalur biasa (1,5-2,2 dtk). Nyalakan hanya kalau
+        // gateway-nya sudah membaik: CHAT_STREAM=true.
+        'chat_stream' => (bool) env('CHAT_STREAM', false),
         'timeout' => (int) env('LLM_TIMEOUT', 60),
     ],
 

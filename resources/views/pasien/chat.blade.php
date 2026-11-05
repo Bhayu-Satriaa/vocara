@@ -27,7 +27,7 @@
             dirasa berat sebaiknya langsung disampaikan ke petugas atau dokter.
         </div>
 
-        <div class="mt-4 rounded-xl border border-line bg-surface p-4">
+        <div id="panel-janji" class="mt-4 rounded-xl border border-line bg-surface p-4">
             <h2 class="text-sm font-semibold text-ink">Janji temu aktif</h2>
             @if (! $pasien)
                 <p class="mt-1 text-sm text-muted">
@@ -57,27 +57,28 @@
         </div>
 
         <div class="mt-4 rounded-xl border border-line bg-surface">
-            <div class="max-h-96 space-y-3 overflow-y-auto p-4">
+            <div id="kotak-chat" class="max-h-96 space-y-3 overflow-y-auto p-4">
                 @forelse ($pesan as $baris)
                     @if ($baris->pengirim === 'pengguna')
                         <div class="flex justify-end">
-                            <div class="max-w-[85%] rounded-xl bg-primary px-3 py-2 text-sm text-white">
+                            <div class="max-w-[85%] whitespace-pre-wrap rounded-xl bg-primary px-3 py-2 text-sm text-white">
                                 {{ $baris->isi }}
                             </div>
                         </div>
                     @else
                         <div class="flex justify-start">
-                            <div class="max-w-[85%] rounded-xl bg-canvas px-3 py-2 text-sm text-ink">
+                            <div class="max-w-[85%] whitespace-pre-wrap rounded-xl bg-canvas px-3 py-2 text-sm text-ink">
                                 {{ $baris->isi }}
                             </div>
                         </div>
                     @endif
                 @empty
-                    <p class="text-sm text-muted">Belum ada percakapan. Tulis pertanyaanmu di bawah.</p>
+                    <p id="pesan-kosong" class="text-sm text-muted">Belum ada percakapan. Tulis pertanyaanmu di bawah.</p>
                 @endforelse
             </div>
 
-            <form method="POST" action="{{ route('pasien.chat.kirim') }}"
+            <form method="POST" action="{{ route('pasien.chat.kirim') }}" id="form-chat"
+                  data-alir="{{ config('services.llm.chat_stream') ? route('pasien.chat.alir') : '' }}"
                   class="flex items-end gap-2 border-t border-line-soft p-3">
                 @csrf
                 <div class="flex-1">
@@ -102,4 +103,205 @@
             tersimpan sebagai riwayat chatbot, bukan rekam medis.
         </p>
     </div>
+
+    <script>
+        // Kirim pertanyaan lewat fetch + baca balasan mengalir (SSE) supaya:
+        // 1) jawaban muncul bertahap (tidak menunggu selesai),
+        // 2) penanda "sedang menyusun" tampil DI DALAM kotak chat, bukan spinner tab,
+        // 3) halaman tidak dimuat ulang sehingga posisi scroll tidak melompat.
+        (() => {
+            const form = document.getElementById('form-chat');
+            const input = document.getElementById('pesan');
+            const kotak = document.getElementById('kotak-chat');
+
+            if (!form || !input || !kotak || !window.fetch || !window.TextDecoder) {
+                return; // browser lama: pakai jalur form biasa
+            }
+
+            const labelAlat = {
+                daftar_dokter: 'mencari dokter yang praktik',
+                cek_jadwal: 'mengecek jam kosong',
+                buat_janji: 'membuat janji',
+                cek_janji: 'membaca janji aktif',
+                batal_janji: 'membatalkan janji',
+            };
+
+            const gelembung = (pengirim, teks) => {
+                const baris = document.createElement('div');
+                baris.className = pengirim === 'pengguna' ? 'flex justify-end' : 'flex justify-start';
+
+                const isi = document.createElement('div');
+                isi.className = pengirim === 'pengguna'
+                    ? 'max-w-[85%] whitespace-pre-wrap rounded-xl bg-primary px-3 py-2 text-sm text-white'
+                    : 'max-w-[85%] whitespace-pre-wrap rounded-xl bg-canvas px-3 py-2 text-sm text-ink';
+                isi.textContent = teks;
+
+                baris.appendChild(isi);
+                kotak.appendChild(baris);
+
+                return isi;
+            };
+
+            const hampirDiBawah = () => kotak.scrollHeight - kotak.scrollTop - kotak.clientHeight < 80;
+            const keBawah = () => { kotak.scrollTop = kotak.scrollHeight; };
+
+            const segarkanJanji = async (intent) => {
+                if (intent !== 'buat_janji' && intent !== 'batal_janji') return;
+
+                const panel = document.getElementById('panel-janji');
+                if (!panel) return;
+
+                const gulir = window.scrollY;
+                const halaman = await fetch(window.location.href, { headers: { 'Accept': 'text/html' } });
+                const dokumen = new DOMParser().parseFromString(await halaman.text(), 'text/html');
+                const baru = dokumen.getElementById('panel-janji');
+
+                if (baru) {
+                    panel.innerHTML = baru.innerHTML;
+                    window.scrollTo(0, gulir); // jangan melompat setelah panel diganti
+                }
+            };
+
+            form.addEventListener('submit', async (e) => {
+                const pesan = input.value.trim();
+
+                if (pesan === '') return;
+
+                e.preventDefault();
+
+                document.getElementById('pesan-kosong')?.remove();
+
+                const dekatBawah = hampirDiBawah();
+
+                gelembung('pengguna', pesan);
+                input.value = '';
+
+                const tunggu = gelembung('bot', '');
+                tunggu.innerHTML = '<span class="inline-flex items-center gap-1.5 text-muted">'
+                    + '<span class="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400"></span>'
+                    + '<span class="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" style="animation-delay:.15s"></span>'
+                    + '<span class="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" style="animation-delay:.3s"></span>'
+                    + '<span class="text-xs">menyusun jawaban…</span></span>';
+
+                if (dekatBawah) keBawah();
+                input.focus();
+
+                try {
+                    const token = form.querySelector('input[name="_token"]').value;
+
+                    if (form.dataset.alir === '') {
+                        // === Mode bawaan: satu permintaan JSON ===
+                        // Terukur lebih cepat di 9Router lokal (1,5-2,2 dtk) daripada mode
+                        // streaming (8-17 dtk), dan tetap tanpa muat ulang halaman.
+                        const jawab = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                            },
+                            body: JSON.stringify({ pesan }),
+                        });
+
+                        if (!jawab.ok) {
+                            throw new Error('jawaban tidak tersedia');
+                        }
+
+                        const data = await jawab.json();
+                        tunggu.textContent = data.jawaban ?? '';
+
+                        if (tunggu.textContent === '') {
+                            tunggu.textContent = 'Maaf, jawaban belum bisa disusun. Coba tanyakan lagi.';
+                        }
+
+                        await segarkanJanji(data.intent);
+
+                        if (dekatBawah) keBawah();
+                        input.focus();
+
+                        return;
+                    }
+
+                    // === Mode streaming (opsional: CHAT_STREAM=true) ===
+                    const jawab = await fetch(form.dataset.alir, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'text/event-stream',
+                            'X-CSRF-TOKEN': token,
+                        },
+                        body: JSON.stringify({ pesan }),
+                    });
+
+                    if (!jawab.ok || !jawab.body) {
+                        throw new Error('jalur streaming tidak tersedia');
+                    }
+
+                    const pembaca = jawab.body.getReader();
+                    const dekoder = new TextDecoder();
+                    let sisa = '';
+                    let teks = '';
+                    let sudahAdaTeks = false;
+                    let intent = null;
+
+                    while (true) {
+                        const { value, done } = await pembaca.read();
+                        if (done) break;
+
+                        sisa += dekoder.decode(value, { stream: true });
+
+                        const blok = sisa.split('\n\n');
+                        sisa = blok.pop() ?? '';
+
+                        for (const satuBlok of blok) {
+                            for (const baris of satuBlok.split('\n')) {
+                                if (!baris.startsWith('data:')) continue;
+
+                                const muatan = baris.slice(5).trim();
+                                if (muatan === '' || muatan === '[DONE]') continue;
+
+                                let peristiwa;
+                                try {
+                                    peristiwa = JSON.parse(muatan);
+                                } catch {
+                                    continue;
+                                }
+
+                                if (peristiwa.delta) {
+                                    if (!sudahAdaTeks) {
+                                        tunggu.textContent = '';
+                                        sudahAdaTeks = true;
+                                    }
+
+                                    teks += peristiwa.delta;
+                                    tunggu.textContent = teks;
+
+                                    if (dekatBawah) keBawah();
+                                } else if (peristiwa.alat) {
+                                    tunggu.textContent = (labelAlat[peristiwa.alat] ?? 'memproses') + '…';
+                                } else if (peristiwa.selesai) {
+                                    intent = peristiwa.intent;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!sudahAdaTeks) {
+                        tunggu.textContent = 'Maaf, jawaban belum bisa disusun. Coba tanyakan lagi.';
+                    }
+
+                    await segarkanJanji(intent);
+                } catch (galat) {
+                    // Jalur biasa: halaman dimuat ulang (tetap berfungsi tanpa JS/streaming).
+                    tunggu.remove();
+                    form.submit();
+
+                    return;
+                }
+
+                if (dekatBawah) keBawah();
+                input.focus();
+            });
+        })();
+    </script>
 @endsection
