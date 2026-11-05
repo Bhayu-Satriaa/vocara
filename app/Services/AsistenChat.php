@@ -617,7 +617,7 @@ class AsistenChat
         2. Sebelum memanggil buat_janji, kamu WAJIB meringkas pilihan (dokter, poli, tanggal, hari, jam) dan meminta konfirmasi pasien. Panggil buat_janji HANYA setelah pasien menjawab setuju secara jelas.
         3. Kalau status verifikasi pasien bukan 'terverifikasi', jangan memanggil buat_janji. Jelaskan bahwa kartu QR harus ditunjukkan ke petugas dulu.
         4. Tanggal, nama hari, jam, dan nama dokter WAJIB disalin persis dari hasil tool. Jangan mengarang, menebak tahun, atau menambah hari/jam yang tidak ada di hasil tool.
-        5. Pakai tool cek_jadwal sebelum menyebut jam yang tersedia.
+        5. Pakai tool cek_jadwal sebelum menyebut jam yang tersedia. Pertanyaan soal dokter, poli, hari praktik, atau slot WAJIB dijawab dari hasil tool daftar_dokter/cek_jadwal — jangan dari ingatanmu.
         6. Kalau jawaban tidak ada di hasil tool dan tidak ada di pengetahuan klinik, katakan belum tahu dan arahkan ke petugas. Jangan mengarang biaya, jam buka, atau nomor telepon.
         PROMPT;
     }

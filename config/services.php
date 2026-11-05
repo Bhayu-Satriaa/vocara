@@ -33,8 +33,12 @@ return [
     'llm' => [
         'base_url' => env('LLM_BASE_URL', 'http://127.0.0.1:20128/v1'),
         'key' => env('LLM_API_KEY', '9router-lokal'),
-        'model' => env('LLM_MODEL', 'cmc/zai-org/GLM-5.2-Fast'),
-        'model_fallback' => env('LLM_MODEL_FALLBACK', 'cmc/moonshotai/Kimi-K2.7-Code-Highspeed'),
+        // Dipilih dari benchmark 5 Nov 2026 (median waktu jawaban, 3x, jalur non-stream):
+        // MiniMax-M3 1,27 dtk · deepseek-v4-flash 2,02 · Step-3.7-Flash 4,58 ·
+        // Kimi-K2.7 4,74 · GLM-5.2-Fast 5,64 · Qwen3.6-Plus 9,55.
+        // deepseek & Kimi kadang mengembalikan jawaban kosong setelah ronde tool → bukan cadangan.
+        'model' => env('LLM_MODEL', 'cmc/MiniMaxAI/MiniMax-M3'),
+        'model_fallback' => env('LLM_MODEL_FALLBACK', 'cmc/zai-org/GLM-5.2-Fast'),
         'max_tokens' => (int) env('LLM_MAX_TOKENS', 800),
         // Kosongkan (bawaan) — jangan dikirim. Catatan uji 5 Nov 2026: menambahkan
         // reasoning_effort justru MEMICU jalur "berpikir" sehingga jawaban jadi 8-16 dtk,
