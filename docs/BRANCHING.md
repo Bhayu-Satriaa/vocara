@@ -102,6 +102,11 @@ git push -u origin juli/design-login         # lihat bagian 6 soal cara push
 - Setelah mengubah Blade: `php artisan view:clear`.
 - Setelah clone baru: `composer install` (Filament sudah tidak dipakai, jadi tidak ada
   lagi langkah `filament:assets`), lalu `npm install && npm run build`.
+- **`public/build` diabaikan git**, jadi tiap mesin punya hasil build sendiri. Kalau tampilan
+  terlihat aneh padahal kode view/CSS sudah benar (mis. **menu profil di pojok kanan atas
+  selalu terbuka dan tidak bisa dibuka-tutup** — pernah terjadi 5 Nov 2026: build dari 3 Nov
+  14:44 sementara `app.css`/`app.js` sudah diubah 19:18, sehingga CSS `.profil-menu` dan JS
+  dropdown-nya tidak ada di bundel), jalankan **`npm run build`** dulu — bukan menambal Blade.
 - **Setelah menarik perubahan yang mencabut paket (mis. Filament/Livewire), wajib:**
   `composer install` **lalu** `php artisan view:clear`. View Blade yang sudah ter-compile
   masih memanggil kelas Livewire, dan tanpa `view:clear` semua halaman jadi 500 dengan

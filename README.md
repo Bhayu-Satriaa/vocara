@@ -142,6 +142,10 @@ Back office dibuat dengan **Blade + Tailwind** di bawah `/dashboard`
   `php artisan view:clear`.** View Blade lama masih memanggil kelas Livewire; kalau
   cache-nya tidak dibuang, semua halaman 500 dengan
   `Class "Livewire\Mechanisms\ExtendBlade\ExtendBlade" not found`.
+- **`public/build` tidak ikut di git.** Kalau tampilan berperilaku aneh padahal kode view/CSS
+  sudah benar (contoh nyata: menu profil di pojok kanan atas tampil terbuka terus dan tombolnya
+  tidak bereaksi, karena bundel CSS/JS tertinggal dari `resources/css/app.css` + `app.js`),
+  jalankan `npm run build` untuk membangun ulang aset di mesinmu.
 
 ## Dokumen
 
