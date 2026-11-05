@@ -36,6 +36,10 @@ Route::middleware(['auth', 'role:pasien'])->group(function () {
     Route::post('/chat/kirim', [ChatController::class, 'kirim'])
         ->middleware('profil')
         ->name('pasien.chat.kirim');
+    // Tutup percakapan sesi ini dan mulai layar kosong (riwayat tetap tersimpan).
+    Route::post('/chat/baru', [ChatController::class, 'baru'])
+        ->middleware('profil')
+        ->name('pasien.chat.baru');
 
     // Booking janji temu dan riwayat kunjungan pasien ditambahkan di sini.
 });

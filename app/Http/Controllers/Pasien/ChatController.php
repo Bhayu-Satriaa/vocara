@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Pasien;
 use App\Http\Controllers\Controller;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
-use App\Models\User;
 use App\Services\AsistenChat;
 use App\Services\BookingService;
 use App\Services\ChatbotService;
@@ -14,15 +13,18 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Chat teks pasien dengan chatbot dasar (Tahap 1: tanpa AI).
- * Rancangan: docs/SPEC-CHATBOT.md
+ * Chat teks pasien dengan chatbot (dijawab model 9Router, cadangan FAQ).
+ * Rancangan: docs/SPEC-CHATBOT.md dan docs/SPEC-BOOKING-CHATBOT.md
  */
 class ChatController extends Controller
 {
-    /** Halaman chat: percakapan aktif + riwayat pesannya + janji aktif pasien. */
+    /** Kunci sesi tempat ID percakapan yang sedang dipakai disimpan. */
+    private const KUNCI_SESI = 'chat_conversation_id';
+
+    /** Halaman chat: percakapan sesi ini + riwayat pesannya + janji aktif pasien. */
     public function index(Request $request): View
     {
-        $percakapan = $this->percakapanAktif($request->user());
+        $percakapan = $this->percakapanAktif($request);
         $pasien = $request->user()->profilAktif();
 
         return view('pasien.chat', [
@@ -47,7 +49,7 @@ class ChatController extends Controller
             ],
         );
 
-        $percakapan = $this->percakapanAktif($request->user());
+        $percakapan = $this->percakapanAktif($request);
 
         ChatMessage::query()->create([
             'conversation_id' => $percakapan->id,
@@ -77,20 +79,53 @@ class ChatController extends Controller
         return redirect()->route('pasien.chat');
     }
 
-    /** Percakapan teks yang masih terbuka milik akun ini, atau dibuat baru. */
-    private function percakapanAktif(User $user): ChatConversation
+    /**
+     * Tutup percakapan sesi ini dan mulai yang baru.
+     * Riwayat lama TIDAK dihapus — hanya tidak ditampilkan lagi di layar pasien.
+     */
+    public function baru(Request $request): RedirectResponse
     {
-        return ChatConversation::query()
-            ->where('user_id', $user->id)
-            ->where('mode', 'teks')
-            ->whereNull('ended_at')
-            ->latest('id')
-            ->first()
-            ?? ChatConversation::query()->create([
-                'user_id' => $user->id,
-                'patient_id' => $user->profilAktif()?->id,
-                'mode' => 'teks',
-                'started_at' => now(),
-            ]);
+        $this->percakapanAktif($request)->update(['ended_at' => now()]);
+
+        $request->session()->forget(self::KUNCI_SESI);
+
+        return redirect()->route('pasien.chat');
+    }
+
+    /**
+     * Percakapan teks untuk SESI INI.
+     *
+     * Percakapan diikat ke sesi login (bukan selalu percakapan terbuka terakhir): tiap
+     * sesi baru mulai dengan layar kosong, sehingga riwayat uji/coba-coba tidak menumpuk
+     * di layar pasien. Riwayat tetap tersimpan di `chat_messages` untuk penelusuran.
+     */
+    private function percakapanAktif(Request $request): ChatConversation
+    {
+        $user = $request->user();
+        $id = $request->session()->get(self::KUNCI_SESI);
+
+        if ($id) {
+            $percakapan = ChatConversation::query()
+                ->whereKey($id)
+                ->where('user_id', $user->id)
+                ->where('mode', 'teks')
+                ->whereNull('ended_at')
+                ->first();
+
+            if ($percakapan) {
+                return $percakapan;
+            }
+        }
+
+        $percakapan = ChatConversation::query()->create([
+            'user_id' => $user->id,
+            'patient_id' => $user->profilAktif()?->id,
+            'mode' => 'teks',
+            'started_at' => now(),
+        ]);
+
+        $request->session()->put(self::KUNCI_SESI, $percakapan->id);
+
+        return $percakapan;
     }
 }

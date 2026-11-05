@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ChatbotKnowledge;
+use App\Models\ChatConversation;
 use App\Models\Patient;
 use App\Models\User;
 use App\Services\ChatbotService;
@@ -160,6 +161,54 @@ class ChatbotFaqTest extends TestCase
             'patient_id' => $pasien->profilAktif()->id,
             'mode' => 'teks',
         ]);
+    }
+
+    public function test_percakapan_dimulai_kosong_setiap_sesi(): void
+    {
+        $this->pengetahuan();
+        $pasien = $this->pasien();
+
+        $this->actingAs($pasien)
+            ->post(route('pasien.chat.kirim'), ['pesan' => 'syarat daftar berobat apa']);
+
+        // Masih di sesi yang sama: pertanyaan & jawabannya tampil (konteks terjaga).
+        $this->actingAs($pasien)
+            ->get(route('pasien.chat'))
+            ->assertOk()
+            ->assertSee('Bawa KTP dan nomor WhatsApp aktif');
+
+        // Sesi login baru (pasien keluar lalu masuk lagi): layar mulai kosong.
+        $this->flushSession();
+
+        $this->actingAs($pasien)
+            ->get(route('pasien.chat'))
+            ->assertOk()
+            ->assertDontSee('Bawa KTP dan nomor WhatsApp aktif');
+
+        $this->assertSame(2, ChatConversation::query()->count(), 'sesi baru dapat percakapan baru');
+        $this->assertDatabaseCount('chat_messages', 2); // riwayat lama tetap tersimpan
+    }
+
+    public function test_tombol_percakapan_baru_mengosongkan_layar_dan_menutup_percakapan(): void
+    {
+        $this->pengetahuan();
+        $pasien = $this->pasien();
+
+        $this->actingAs($pasien)
+            ->post(route('pasien.chat.kirim'), ['pesan' => 'syarat daftar berobat apa']);
+
+        $this->actingAs($pasien)
+            ->post(route('pasien.chat.baru'))
+            ->assertRedirect(route('pasien.chat'));
+
+        $this->actingAs($pasien)
+            ->get(route('pasien.chat'))
+            ->assertOk()
+            ->assertDontSee('Bawa KTP dan nomor WhatsApp aktif');
+
+        $this->assertNotNull(ChatConversation::query()->orderBy('id')->first()->ended_at);
+        $this->assertSame(2, ChatConversation::query()->count());
+        $this->assertDatabaseCount('chat_messages', 2); // riwayat lama tidak dihapus
     }
 
     public function test_riwayat_percakapan_tidak_bisa_dibaca_pasien_lain(): void

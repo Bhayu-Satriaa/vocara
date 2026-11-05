@@ -4,11 +4,23 @@
 
 @section('isi')
     <div class="mx-auto max-w-2xl">
-        <h1 class="text-xl font-semibold text-ink">Tanya chatbot</h1>
-        <p class="mt-1 text-sm text-muted">
-            Tanya soal pendaftaran, kartu QR, jadwal, atau layanan klinik.
-            Pembuatan janji lewat chat menyusul.
-        </p>
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <h1 class="text-xl font-semibold text-ink">Tanya chatbot</h1>
+                <p class="mt-1 text-sm text-muted">
+                    Tanya soal pendaftaran, kartu QR, jadwal, atau layanan klinik — sekaligus
+                    bisa minta dibuatkan janji temu.
+                </p>
+            </div>
+
+            <form method="POST" action="{{ route('pasien.chat.baru') }}">
+                @csrf
+                <button type="submit"
+                        class="shrink-0 rounded-[9px] border border-line bg-surface px-3 py-2 text-[13px] font-semibold text-ink hover:bg-slate-50">
+                    Percakapan baru
+                </button>
+            </form>
+        </div>
 
         <div class="mt-4 rounded-xl border border-amber-soft bg-amber-soft px-4 py-3 text-sm text-amber-ink">
             Informasi dari chatbot <strong>bukan pengganti pemeriksaan dokter</strong>. Keluhan yang
@@ -85,7 +97,9 @@
         </div>
 
         <p class="mt-3 text-xs text-faint">
-            Percakapan ini tersimpan sebagai riwayat chatbot, bukan rekam medis.
+            Percakapan ini hanya berlaku untuk sesi login ini — keluar atau tekan
+            <strong>Percakapan baru</strong> untuk mulai dari layar kosong. Riwayatnya tetap
+            tersimpan sebagai riwayat chatbot, bukan rekam medis.
         </p>
     </div>
 @endsection
