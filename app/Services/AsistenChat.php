@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ChatConversation;
+use App\Models\ChatbotKnowledge;
 use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\Visit;
@@ -35,6 +36,9 @@ class AsistenChat
 
     /** Berapa lama slot yang sudah ditawarkan masih dianggap berlaku. */
     private const MENIT_TAWARAN = 30;
+
+    /** Batas jumlah FAQ yang dikirim ke model, supaya prompt tidak membengkak. */
+    private const MAKS_FAQ = 30;
 
     /**
      * Kunci cache tempat slot yang sudah ditawarkan ke pasien disimpan, per percakapan.
@@ -370,6 +374,33 @@ class AsistenChat
         }
     }
 
+    /**
+     * Semua FAQ aktif dari basis pengetahuan yang dikelola admin
+     * (`/dashboard/pengetahuan-chatbot`). Dikirim apa adanya ke model supaya pertanyaan
+     * layanan (jam buka, biaya, syarat, kartu QR) dijawab dari data klinik — bukan dari
+     * karangan model, dan bukan hanya saat gateway mati.
+     */
+    private function basisPengetahuan(): string
+    {
+        $entri = ChatbotKnowledge::query()
+            ->where('is_active', true)
+            ->orderBy('kategori')
+            ->orderBy('id')
+            ->limit(self::MAKS_FAQ)
+            ->get()
+            ->map(fn (ChatbotKnowledge $faq) => "- [{$faq->kategori}] {$faq->pertanyaan}: {$faq->jawaban}")
+            ->all();
+
+        if ($entri === []) {
+            return '';
+        }
+
+        return "Basis pengetahuan klinik (pakai kalau cocok; jangan mengarang di luar ini dan di luar hasil tool):\n"
+            .implode("\n", $entri)
+            ."\nUntuk jam, tanggal, nama dokter, dan ketersediaan slot: tetap WAJIB dari hasil tool.\n"
+            ."Kalau jawabannya tidak ada di daftar ini maupun di hasil tool: katakan belum tahu dan arahkan ke petugas.\n";
+    }
+
     /** System prompt disimpan di server (bukan di browser) supaya tidak bisa diubah pasien. */
     private function promptSistem(?Patient $pasien): string
     {
@@ -379,12 +410,14 @@ class AsistenChat
             ? "Data diri yang sedang dipakai: {$pasien->nama_lengkap} ({$pasien->no_rm}), status verifikasi: {$pasien->verification_status}."
             : 'Pasien belum punya data diri (belum disetujui admin).';
 
+        $faq = $this->basisPengetahuan();
+
         return <<<PROMPT
         Kamu asisten klinik kesehatan bernama Rani. Jawab dalam Bahasa Indonesia, ramah dan singkat (maksimal 3 kalimat).
 
         Hari ini: {$hariIni->toDateString()} ({$hariIni->locale('id')->translatedFormat('l')}).
         {$profil}
-
+        {$faq}
         Aturan yang wajib dipatuhi:
         1. Kamu BUKAN pengganti dokter: jangan memberi diagnosis, dosis obat, atau janji kesembuhan. Untuk keluhan berat, arahkan ke petugas/dokter.
         2. Sebelum memanggil buat_janji, kamu WAJIB meringkas pilihan (dokter, poli, tanggal, hari, jam) dan meminta konfirmasi pasien. Panggil buat_janji HANYA setelah pasien menjawab setuju secara jelas.

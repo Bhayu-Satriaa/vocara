@@ -303,6 +303,38 @@ class ChatbotAiTest extends TestCase
         ]);
     }
 
+    public function test_basis_pengetahuan_aktif_ikut_dikirim_ke_model(): void
+    {
+        ChatbotKnowledge::query()->create([
+            'kategori' => 'Layanan',
+            'pertanyaan' => 'jam buka layanan klinik',
+            'jawaban' => 'Pendaftaran dibuka Senin-Jumat 08.00-16.00.',
+            'is_active' => true,
+        ]);
+
+        ChatbotKnowledge::query()->create([
+            'kategori' => 'Layanan',
+            'pertanyaan' => 'catatan internal',
+            'jawaban' => 'JANGAN DIKIRIM KE PASIEN',
+            'is_active' => false,
+        ]);
+
+        $sistem = '';
+        Http::fake(function ($request) use (&$sistem) {
+            $pesan = collect($request->data()['messages'] ?? [])->firstWhere('role', 'system');
+            $sistem = $pesan['content'] ?? '';
+
+            return $this->responTeks('Baik.');
+        });
+
+        $this->actingAs($this->pasien())
+            ->post(route('pasien.chat.kirim'), ['pesan' => 'jam buka klinik?']);
+
+        $this->assertStringContainsString('Pendaftaran dibuka Senin-Jumat 08.00-16.00.', $sistem);
+        $this->assertStringNotContainsString('JANGAN DIKIRIM KE PASIEN', $sistem);
+        $this->assertStringContainsString('tetap WAJIB dari hasil tool', $sistem);
+    }
+
     public function test_panel_janji_tampil_di_halaman_chat(): void
     {
         $dokter = $this->dokter();
