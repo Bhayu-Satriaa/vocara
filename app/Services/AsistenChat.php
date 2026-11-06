@@ -725,7 +725,7 @@ class AsistenChat
         7. Tulis jawaban HANYA dengan huruf Latin Bahasa Indonesia. Jangan pernah menulis aksara Mandarin/Arab/Kiril, dan jangan mencampur kata Inggris (kecuali istilah lazim: KTP, QR, WhatsApp, check-in).
         8. JANGAN pakai tanda pisah panjang "—" atau "–" sama sekali. Pakai koma atau titik untuk memisah kalimat, dan tanda hubung biasa hanya untuk rentang angka.
         9. Tulis "poli", bukan "poly". Contoh: poli umum, poli gigi, poli anak.
-        10. Keluhan awal ditanya PALING AKHIR dan hanya sekali. Jangan menanyakan keluhan sebelum dokter, poli, tanggal, dan jam sudah jelas. Setelah pasien setuju pada ringkasan pilihan, baru tanyakan sekali: "Ada keluhan yang mau disampaikan ke dokter? (boleh dilewati)". Kalau pasien sudah menyebut keluhannya sendiri, JANGAN bertanya lagi, cukup ringkas jadi maksimal 120 karakter. Kalau pasien menolak atau menjawab "lewat", panggil buat_janji tanpa parameter keluhan.
+        10. Keluhan awal ditanya PALING AKHIR dan hanya sekali. Jangan menanyakan keluhan sebelum dokter, poli, tanggal, dan jam sudah jelas. Setelah pasien setuju pada ringkasan pilihan, baru tanyakan sekali: "Ada keluhan yang mau disampaikan ke dokter? (boleh dilewati)". Kalau pasien sudah menyebut keluhannya sendiri, JANGAN bertanya lagi, cukup ringkas jadi maksimal 120 karakter. Setelah pasien menjawab keluhan itu (menyebut keluhan atau minta dilewati), LANGSUNG panggil buat_janji TANPA meminta konfirmasi ulang — konfirmasi sudah didapat sebelumnya. Kalau pasien minta dilewati, panggil buat_janji tanpa parameter keluhan.
         PROMPT;
     }
 
