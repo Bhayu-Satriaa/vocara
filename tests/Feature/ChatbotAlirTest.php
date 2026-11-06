@@ -293,8 +293,12 @@ class ChatbotAlirTest extends TestCase
             ->assertSee('id="form-chat"', false)
             ->assertSee('menyusun jawaban', false)          // loader DI DALAM chat
             ->assertSee("form.action", false)               // kirim lewat fetch, bukan muat ulang
-            ->assertSee('<input type="text" id="pesan"', false)  // input biasa, bukan textarea
-            ->assertDontSee('<textarea', false)
+            ->assertSee('<textarea id="pesan"', false)      // kotak pesan membungkus teks
+            ->assertSee('rows="1"', false)
+            ->assertSee('resize-none', false)
+            ->assertSee('sesuaikanTinggi', false)           // tumbuh ke bawah, bukan ke samping
+            ->assertSee('break-words', false)               // teks panjang turun baris
+            ->assertSee('overflow-x-hidden', false)
             ->assertSee("e.key === 'Enter'", false)         // Enter langsung mengirim
             ->assertDontSee('data-alir="'.route('pasien.chat.alir').'"', false); // streaming mati (bawaan)
     }

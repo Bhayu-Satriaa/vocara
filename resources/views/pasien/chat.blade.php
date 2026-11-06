@@ -57,17 +57,17 @@
         </div>
 
         <div class="mt-4 rounded-xl border border-line bg-surface">
-            <div id="kotak-chat" class="max-h-96 space-y-3 overflow-y-auto p-4">
+            <div id="kotak-chat" class="max-h-96 space-y-3 overflow-x-hidden overflow-y-auto p-4">
                 @forelse ($pesan as $baris)
                     @if ($baris->pengirim === 'pengguna')
                         <div class="flex justify-end">
-                            <div class="max-w-[85%] whitespace-pre-wrap rounded-xl bg-primary px-3 py-2 text-sm text-white">
+                            <div class="min-w-0 max-w-[85%] break-words whitespace-pre-wrap rounded-xl bg-primary px-3 py-2 text-sm text-white">
                                 {{ $baris->isi }}
                             </div>
                         </div>
                     @else
                         <div class="flex justify-start">
-                            <div class="max-w-[85%] whitespace-pre-wrap rounded-xl bg-canvas px-3 py-2 text-sm text-ink">
+                            <div class="min-w-0 max-w-[85%] break-words whitespace-pre-wrap rounded-xl bg-canvas px-3 py-2 text-sm text-ink">
                                 {{ $baris->isi }}
                             </div>
                         </div>
@@ -83,9 +83,11 @@
                 @csrf
                 <div class="flex-1">
                     <label for="pesan" class="sr-only">Pertanyaan</label>
-                    <input type="text" id="pesan" name="pesan" maxlength="500" required autocomplete="off"
-                           class="w-full rounded-lg border border-line px-3 py-2 text-sm"
-                           placeholder="cth. apa syarat daftar berobat?" value="{{ old('pesan') }}">
+                    {{-- Textarea satu baris yang tumbuh ke bawah saat teks panjang, supaya
+                         tulisannya turun ke baris baru, bukan melebar ke samping. --}}
+                    <textarea id="pesan" name="pesan" rows="1" maxlength="500" required
+                              class="block max-h-32 w-full resize-none overflow-y-auto rounded-lg border border-line px-3 py-2 text-sm leading-6"
+                              placeholder="cth. apa syarat daftar berobat?">{{ old('pesan') }}</textarea>
                     @error('pesan')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -118,6 +120,15 @@
                 return; // browser lama: pakai jalur form biasa
             }
 
+            // Kotak pesan tumbuh KE BAWAH saat teks panjang (bukan melebar ke samping).
+            const sesuaikanTinggi = () => {
+                input.style.height = 'auto';
+                input.style.height = Math.min(input.scrollHeight, 128) + 'px';
+            };
+
+            input.addEventListener('input', sesuaikanTinggi);
+            sesuaikanTinggi();
+
             const labelAlat = {
                 daftar_dokter: 'mencari dokter yang praktik',
                 cek_jadwal: 'mengecek jam kosong',
@@ -132,8 +143,8 @@
 
                 const isi = document.createElement('div');
                 isi.className = pengirim === 'pengguna'
-                    ? 'max-w-[85%] whitespace-pre-wrap rounded-xl bg-primary px-3 py-2 text-sm text-white'
-                    : 'max-w-[85%] whitespace-pre-wrap rounded-xl bg-canvas px-3 py-2 text-sm text-ink';
+                    ? 'min-w-0 max-w-[85%] break-words whitespace-pre-wrap rounded-xl bg-primary px-3 py-2 text-sm text-white'
+                    : 'min-w-0 max-w-[85%] break-words whitespace-pre-wrap rounded-xl bg-canvas px-3 py-2 text-sm text-ink';
                 isi.textContent = teks;
 
                 baris.appendChild(isi);
@@ -183,6 +194,7 @@
 
                 gelembung('pengguna', pesan);
                 input.value = '';
+                sesuaikanTinggi();
 
                 const tunggu = gelembung('bot', '');
                 tunggu.innerHTML = '<span class="inline-flex items-center gap-1.5 text-muted">'
