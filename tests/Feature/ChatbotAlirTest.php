@@ -74,6 +74,14 @@ class ChatbotAlirTest extends TestCase
         return Carbon::parse('next monday')->toDateString();
     }
 
+    /** Model balas teks biasa (tanpa tool) — jalur non-stream. */
+    private function fakeTeksSaja(string $teks): void
+    {
+        Http::fake(['*' => fn () => Http::response([
+            'choices' => [['message' => ['role' => 'assistant', 'content' => $teks], 'finish_reason' => 'stop']],
+        ], 200)]);
+    }
+
     /** Badan SSE palsu: beberapa potongan teks lalu penutup. */
     private function sseTeks(array $potongan): string
     {
@@ -261,6 +269,19 @@ class ChatbotAlirTest extends TestCase
         ]);
     }
 
+    public function test_jawaban_yang_bocor_aksara_asing_dibersihkan(): void
+    {
+        // Contoh nyata: "Baik, saya bantu buatkan janji temu.的话语Pertama, …"
+        $this->fakeTeksSaja('Baik, saya bantu buatkan janji temu.的话语Pertama, apa keluhan Anda?');
+
+        $this->actingAs($this->pasien())
+            ->postJson(route('pasien.chat.kirim'), ['pesan' => 'saya mau buat janji'])
+            ->assertOk()
+            ->assertJsonPath('jawaban', 'Baik, saya bantu buatkan janji temu.Pertama, apa keluhan Anda?');
+
+        $this->assertDatabaseMissing('chat_messages', ['isi' => 'Baik, saya bantu buatkan janji temu.的话语Pertama, apa keluhan Anda?']);
+    }
+
     public function test_halaman_chat_memuat_skrip_loader_di_dalam_chat(): void
     {
         $pasien = $this->pasien();
@@ -272,6 +293,9 @@ class ChatbotAlirTest extends TestCase
             ->assertSee('id="form-chat"', false)
             ->assertSee('menyusun jawaban', false)          // loader DI DALAM chat
             ->assertSee("form.action", false)               // kirim lewat fetch, bukan muat ulang
+            ->assertSee('<input type="text" id="pesan"', false)  // input biasa, bukan textarea
+            ->assertDontSee('<textarea', false)
+            ->assertSee("e.key === 'Enter'", false)         // Enter langsung mengirim
             ->assertDontSee('data-alir="'.route('pasien.chat.alir').'"', false); // streaming mati (bawaan)
     }
 

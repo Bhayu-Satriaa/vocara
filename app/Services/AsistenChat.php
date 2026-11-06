@@ -86,7 +86,7 @@ class AsistenChat
             $toolCalls = $jawaban['tool_calls'] ?? [];
 
             if ($toolCalls === []) {
-                $isi = trim((string) ($jawaban['content'] ?? ''));
+                $isi = $this->bersihkanJawaban((string) ($jawaban['content'] ?? ''));
 
                 return $isi === '' ? null : ['isi' => $isi, 'intent' => $intent];
             }
@@ -159,7 +159,7 @@ class AsistenChat
             $toolCalls = $jawaban['tool_calls'] ?? [];
 
             if ($toolCalls === []) {
-                yield ['selesai' => true, 'isi' => trim($teksRondeTerakhir), 'intent' => $intent];
+                yield ['selesai' => true, 'isi' => $this->bersihkanJawaban($teksRondeTerakhir), 'intent' => $intent];
 
                 return;
             }
@@ -190,7 +190,27 @@ class AsistenChat
             $teksRondeTerakhir = '';
         }
 
-        yield ['selesai' => true, 'isi' => trim($teksRondeTerakhir), 'intent' => $intent];
+        yield ['selesai' => true, 'isi' => $this->bersihkanJawaban($teksRondeTerakhir), 'intent' => $intent];
+    }
+
+    /**
+     * Buang sisa token asing yang kadang bocor dari model sebelum jawaban disimpan.
+     *
+     * Contoh nyata (5 Nov 2026): "Baik, saya bantu buatkan janji temu.的话语Pertama, …"
+     * — aksara Mandarin ikut terkirim. Aksara non-Latin yang tidak mungkin dipakai
+     * jawaban Bahasa Indonesia dibuang, lalu spasi dirapikan.
+     */
+    private function bersihkanJawaban(string $teks): string
+    {
+        $asing = '/[\x{2E80}-\x{2EFF}\x{3000}-\x{303F}\x{3040}-\x{30FF}'
+            .'\x{3400}-\x{4DBF}\x{4E00}-\x{9FFF}\x{F900}-\x{FAFF}'
+            .'\x{AC00}-\x{D7AF}\x{0400}-\x{04FF}\x{0600}-\x{06FF}'
+            .'\x{0900}-\x{097F}\x{0E00}-\x{0E7F}]+/u';
+
+        $bersih = preg_replace($asing, '', $teks) ?? $teks;
+        $bersih = preg_replace('/[ \t]{2,}/', ' ', $bersih) ?? $bersih;
+
+        return trim($bersih);
     }
 
     /** Susun daftar pesan (system + riwayat) yang dikirim ke model. */
@@ -619,6 +639,7 @@ class AsistenChat
         4. Tanggal, nama hari, jam, dan nama dokter WAJIB disalin persis dari hasil tool. Jangan mengarang, menebak tahun, atau menambah hari/jam yang tidak ada di hasil tool.
         5. Pakai tool cek_jadwal sebelum menyebut jam yang tersedia. Pertanyaan soal dokter, poli, hari praktik, atau slot WAJIB dijawab dari hasil tool daftar_dokter/cek_jadwal — jangan dari ingatanmu.
         6. Kalau jawaban tidak ada di hasil tool dan tidak ada di pengetahuan klinik, katakan belum tahu dan arahkan ke petugas. Jangan mengarang biaya, jam buka, atau nomor telepon.
+        7. Tulis jawaban HANYA dengan huruf Latin Bahasa Indonesia. Jangan pernah menulis aksara Mandarin/Arab/Kiril, dan jangan mencampur kata Inggris (kecuali istilah lazim: KTP, QR, WhatsApp, check-in).
         PROMPT;
     }
 

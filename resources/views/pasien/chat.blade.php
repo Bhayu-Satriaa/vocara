@@ -79,13 +79,13 @@
 
             <form method="POST" action="{{ route('pasien.chat.kirim') }}" id="form-chat"
                   data-alir="{{ config('services.llm.chat_stream') ? route('pasien.chat.alir') : '' }}"
-                  class="flex items-end gap-2 border-t border-line-soft p-3">
+                  class="flex items-center gap-2 border-t border-line-soft p-3">
                 @csrf
                 <div class="flex-1">
                     <label for="pesan" class="sr-only">Pertanyaan</label>
-                    <textarea id="pesan" name="pesan" rows="2" maxlength="500" required
-                              class="w-full rounded-lg border border-line px-3 py-2 text-sm"
-                              placeholder="cth. apa syarat daftar berobat?">{{ old('pesan') }}</textarea>
+                    <input type="text" id="pesan" name="pesan" maxlength="500" required autocomplete="off"
+                           class="w-full rounded-lg border border-line px-3 py-2 text-sm"
+                           placeholder="cth. apa syarat daftar berobat?" value="{{ old('pesan') }}">
                     @error('pesan')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -161,6 +161,14 @@
                     window.scrollTo(0, gulir); // jangan melompat setelah panel diganti
                 }
             };
+
+            // Enter langsung mengirim; tombol "Kirim" tetap ada untuk yang suka klik.
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    form.requestSubmit();
+                }
+            });
 
             form.addEventListener('submit', async (e) => {
                 const pesan = input.value.trim();
