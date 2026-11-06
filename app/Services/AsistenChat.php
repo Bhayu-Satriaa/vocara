@@ -208,6 +208,23 @@ class AsistenChat
             .'\x{0900}-\x{097F}\x{0E00}-\x{0E7F}]+/u';
 
         $bersih = preg_replace($asing, '', $teks) ?? $teks;
+
+        // Kata yang sering salah tulis model -> istilah baku klinik ("poly" -> "poli").
+        $bersih = preg_replace_callback(
+            '/\bpoly\b/ui',
+            static fn (array $c): string => mb_substr($c[0], 0, 1) === mb_strtoupper(mb_substr($c[0], 0, 1)) ? 'Poli' : 'poli',
+            $bersih
+        ) ?? $bersih;
+
+        // Tanda pisah tipografis (— / –) tidak dipakai lagi:
+        // antar angka jadi tanda hubung biasa (08.00-12.00), pemisah kalimat jadi koma.
+        $bersih = preg_replace('/(\d)\s*[—–]\s*(\d)/u', '$1-$2', $bersih) ?? $bersih;
+        $bersih = preg_replace('/\s*[—–]\s*/u', ', ', $bersih) ?? $bersih;
+        $bersih = str_replace([', ,', ',,', ' ,'], [',', ',', ','], $bersih);
+        $bersih = preg_replace('/,\s*([.,!?;:])/u', '$1', $bersih) ?? $bersih;
+        $bersih = preg_replace('/^[\s,]+/u', '', $bersih) ?? $bersih;
+
+        // Rapikan sisa spasi ganda.
         $bersih = preg_replace('/[ \t]{2,}/', ' ', $bersih) ?? $bersih;
 
         return trim($bersih);
@@ -640,6 +657,8 @@ class AsistenChat
         5. Pakai tool cek_jadwal sebelum menyebut jam yang tersedia. Pertanyaan soal dokter, poli, hari praktik, atau slot WAJIB dijawab dari hasil tool daftar_dokter/cek_jadwal — jangan dari ingatanmu.
         6. Kalau jawaban tidak ada di hasil tool dan tidak ada di pengetahuan klinik, katakan belum tahu dan arahkan ke petugas. Jangan mengarang biaya, jam buka, atau nomor telepon.
         7. Tulis jawaban HANYA dengan huruf Latin Bahasa Indonesia. Jangan pernah menulis aksara Mandarin/Arab/Kiril, dan jangan mencampur kata Inggris (kecuali istilah lazim: KTP, QR, WhatsApp, check-in).
+        8. JANGAN pakai tanda pisah panjang "—" atau "–" sama sekali. Pakai koma atau titik untuk memisah kalimat, dan tanda hubung biasa hanya untuk rentang angka.
+        9. Tulis "poli", bukan "poly". Contoh: poli umum, poli gigi, poli anak.
         PROMPT;
     }
 

@@ -282,6 +282,24 @@ class ChatbotAlirTest extends TestCase
         $this->assertDatabaseMissing('chat_messages', ['isi' => 'Baik, saya bantu buatkan janji temu.的话语Pertama, apa keluhan Anda?']);
     }
 
+    public function test_tanda_pisah_panjang_dan_kata_poly_dibersihkan(): void
+    {
+        // Contoh keluaran model: "Poli poly anak buka 08.00 — 12.00 — silakan datang."
+        $this->fakeTeksSaja('Poli poly anak buka 08.00 — 12.00 — silakan datang lebih pagi.');
+
+        $this->actingAs($this->pasien())
+            ->postJson(route('pasien.chat.kirim'), ['pesan' => 'jam poli anak?'])
+            ->assertOk()
+            ->assertJsonPath('jawaban', 'Poli poli anak buka 08.00-12.00, silakan datang lebih pagi.');
+
+        // Tidak boleh ada satu pun tanda pisah tipografis yang tersimpan.
+        foreach (ChatMessage::where('pengirim', 'bot')->pluck('isi') as $isi) {
+            $this->assertStringNotContainsString('—', $isi);
+            $this->assertStringNotContainsString('–', $isi);
+            $this->assertStringNotContainsString('poly', $isi);
+        }
+    }
+
     public function test_halaman_chat_memuat_skrip_loader_di_dalam_chat(): void
     {
         $pasien = $this->pasien();
