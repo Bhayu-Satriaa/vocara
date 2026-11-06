@@ -284,13 +284,13 @@ class ChatbotAlirTest extends TestCase
 
     public function test_tanda_pisah_panjang_dan_kata_poly_dibersihkan(): void
     {
-        // Contoh keluaran model: "Poli poly anak buka 08.00 — 12.00 — silakan datang."
-        $this->fakeTeksSaja('Poli poly anak buka 08.00 — 12.00 — silakan datang lebih pagi.');
+        // Contoh keluaran model: kata "poly", tanda pisah panjang, dan kata menempel angka.
+        $this->fakeTeksSaja('Poli poly anak buka Jumat6 November jam08:00 — silakan datang lebih pagi.');
 
         $this->actingAs($this->pasien())
             ->postJson(route('pasien.chat.kirim'), ['pesan' => 'jam poli anak?'])
             ->assertOk()
-            ->assertJsonPath('jawaban', 'Poli poli anak buka 08.00-12.00, silakan datang lebih pagi.');
+            ->assertJsonPath('jawaban', 'Poli poli anak buka Jumat 6 November jam 08:00, silakan datang lebih pagi.');
 
         // Tidak boleh ada satu pun tanda pisah tipografis yang tersimpan.
         foreach (ChatMessage::where('pengirim', 'bot')->pluck('isi') as $isi) {

@@ -31,7 +31,7 @@ use Psr\Http\Message\StreamInterface;
 class AsistenChat
 {
     /** Maksimal putaran tool calling supaya percakapan tidak menggantung. */
-    private const MAKS_RONDE = 3;
+    private const MAKS_RONDE = 4;
 
     /** Berapa pesan terakhir yang dikirim sebagai konteks. */
     private const KONTEKS_PESAN = 10;
@@ -65,6 +65,8 @@ class AsistenChat
     public function balas(ChatConversation $percakapan, ?Patient $pasien): ?array
     {
         if (! $this->tersedia()) {
+            Log::warning('Chatbot tanpa gateway model: LLM_BASE_URL/LLM_MODEL belum diisi');
+
             return null;
         }
 
@@ -77,7 +79,10 @@ class AsistenChat
         $intent = 'ai';
 
         for ($ronde = 0; $ronde < self::MAKS_RONDE; $ronde++) {
-            $jawaban = $this->panggilModel($pesan);
+            // Putaran terakhir: tool dilarang supaya model WAJIB menjawab dengan teks.
+            // Tanpa ini, percakapan yang ramai memakai tool berhenti tanpa jawaban sama sekali
+            // dan pasien hanya menerima pesan cadangan ("asisten sedang sibuk").
+            $jawaban = $this->panggilModel($pesan, $ronde === self::MAKS_RONDE - 1);
 
             if ($jawaban === null) {
                 return null;
@@ -88,7 +93,13 @@ class AsistenChat
             if ($toolCalls === []) {
                 $isi = $this->bersihkanJawaban((string) ($jawaban['content'] ?? ''));
 
-                return $isi === '' ? null : ['isi' => $isi, 'intent' => $intent];
+                if ($isi === '') {
+                    Log::warning('Jawaban model kosong setelah dibersihkan', ['model' => config('services.llm.model')]);
+
+                    return null;
+                }
+
+                return ['isi' => $isi, 'intent' => $intent];
             }
 
             // Kirim balik HANYA field yang dikenal API (jangan ikutkan `reasoning_content`):
@@ -113,6 +124,8 @@ class AsistenChat
                 ];
             }
         }
+
+        Log::warning('Model tidak menjawab setelah batas putaran tool', ['maks_ronde' => self::MAKS_RONDE]);
 
         return null;
     }
@@ -144,7 +157,7 @@ class AsistenChat
         for ($ronde = 0; $ronde < self::MAKS_RONDE; $ronde++) {
             $jawaban = null;
 
-            foreach ($this->panggilModelAlir($pesan, $jawaban) as $kejadian) {
+            foreach ($this->panggilModelAlir($pesan, $jawaban, $ronde === self::MAKS_RONDE - 1) as $kejadian) {
                 $teksRondeTerakhir .= $kejadian['delta'];
 
                 yield $kejadian;
@@ -193,6 +206,14 @@ class AsistenChat
         yield ['selesai' => true, 'isi' => $this->bersihkanJawaban($teksRondeTerakhir), 'intent' => $intent];
     }
 
+    /** Ringkas keluhan pasien jadi maksimal 120 karakter; null kalau kosong. */
+    private function ringkasKeluhan(?string $keluhan): ?string
+    {
+        $teks = trim((string) $keluhan);
+
+        return $teks === '' ? null : mb_substr($teks, 0, 120, 'UTF-8');
+    }
+
     /**
      * Buang sisa token asing yang kadang bocor dari model sebelum jawaban disimpan.
      *
@@ -223,6 +244,15 @@ class AsistenChat
         $bersih = str_replace([', ,', ',,', ' ,'], [',', ',', ','], $bersih);
         $bersih = preg_replace('/,\s*([.,!?;:])/u', '$1', $bersih) ?? $bersih;
         $bersih = preg_replace('/^[\s,]+/u', '', $bersih) ?? $bersih;
+
+        // Kata Indonesia yang sering menempel ke angka ("Jumat6 November", "jam08:00")
+        // dipisah supaya mudah dibaca. Angka tidak pernah menempel ke kata dalam jawaban ini,
+        // jadi aman; tanda hubung seperti RM-000001 tidak ikut diubah.
+        $bersih = preg_replace(
+            '/\b(hari|senin|selasa|rabu|kamis|jumat|jum\'at|sabtu|minggu|januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|jam|pukul|tanggal|tahun|pukul)(\d)/iu',
+            '$1 $2',
+            $bersih
+        ) ?? $bersih;
 
         // Rapikan sisa spasi ganda.
         $bersih = preg_replace('/[ \t]{2,}/', ' ', $bersih) ?? $bersih;
@@ -255,24 +285,33 @@ class AsistenChat
      * @param  array<string, mixed>|null  $hasil
      * @return Generator<int, array{delta: string}>
      */
-    private function panggilModelAlir(array $pesan, ?array &$hasil): Generator
+    private function panggilModelAlir(array $pesan, ?array &$hasil, bool $wajibTeks = false): Generator
     {
         $hasil = null;
         $model = array_unique(array_filter([config('services.llm.model'), config('services.llm.model_fallback')]));
 
         foreach ($model as $nama) {
-            $respon = Http::withToken(config('services.llm.key'))
-                ->timeout((int) config('services.llm.timeout'))
-                ->withOptions(['stream' => true])
-                ->acceptJson()
-                ->post(rtrim((string) config('services.llm.base_url'), '/').'/chat/completions', array_filter([
+            try {
+                $respon = Http::withToken(config('services.llm.key'))
+                    ->timeout((int) config('services.llm.timeout'))
+                    ->withOptions(['stream' => true])
+                    ->acceptJson()
+                    ->post(rtrim((string) config('services.llm.base_url'), '/').'/chat/completions', array_filter([
+                        'model' => $nama,
+                        'messages' => $pesan,
+                        'tools' => $wajibTeks ? null : $this->alat(),
+                        'max_tokens' => (int) config('services.llm.max_tokens'),
+                        'stream' => true,
+                        'reasoning_effort' => config('services.llm.reasoning_effort'),
+                    ]));
+            } catch (\Throwable $e) {
+                Log::warning('Gateway model tidak bisa dihubungi (mode streaming)', [
                     'model' => $nama,
-                    'messages' => $pesan,
-                    'tools' => $this->alat(),
-                    'max_tokens' => (int) config('services.llm.max_tokens'),
-                    'stream' => true,
-                    'reasoning_effort' => config('services.llm.reasoning_effort'),
-                ]));
+                    'pesan' => $e->getMessage(),
+                ]);
+
+                continue;
+            }
 
             if (! $respon->successful()) {
                 Log::warning('Gateway model menolak permintaan (mode streaming)', [
@@ -353,7 +392,7 @@ class AsistenChat
     }
 
     /** Panggil endpoint /chat/completions; kalau model utama gagal, coba model cadangan. */
-    private function panggilModel(array $pesan): ?array
+    private function panggilModel(array $pesan, bool $wajibTeks = false): ?array
     {
         $model = [config('services.llm.model'), config('services.llm.model_fallback')];
         $anggaran = (int) config('services.llm.max_tokens');
@@ -363,16 +402,30 @@ class AsistenChat
             // `content` keluar kosong (finish_reason=length). Coba ulang dengan anggaran
             // dua kali lipat sebelum menyerah — kalau tidak, jawaban hilang padahal gateway sehat.
             for ($percobaan = 1; $percobaan <= 2; $percobaan++) {
-                $respon = Http::withToken(config('services.llm.key'))
-                    ->timeout((int) config('services.llm.timeout'))
-                    ->acceptJson()
-                    ->post(rtrim((string) config('services.llm.base_url'), '/').'/chat/completions', array_filter([
+                try {
+                    $respon = Http::withToken(config('services.llm.key'))
+                        ->timeout((int) config('services.llm.timeout'))
+                        ->acceptJson()
+                        ->post(rtrim((string) config('services.llm.base_url'), '/').'/chat/completions', array_filter([
+                            'model' => $nama,
+                            'messages' => $pesan,
+                            // Putaran terakhir: parameter `tools` dibuang sama sekali (bukan cuma
+                            // tool_choice=none, karena sebagian model mengabaikannya) supaya model
+                            // WAJIB menjawab teks dan percakapan tidak berhenti tanpa jawaban.
+                            'tools' => $wajibTeks ? null : $this->alat(),
+                            'max_tokens' => $anggaran,
+                            'reasoning_effort' => config('services.llm.reasoning_effort'),
+                        ]));
+                } catch (\Throwable $e) {
+                    // Gateway tidak bisa dihubungi (koneksi ditolak / waktu habis): dicatat
+                    // supaya tidak lagi gagal diam-diam, lalu coba model berikutnya.
+                    Log::warning('Gateway model tidak bisa dihubungi', [
                         'model' => $nama,
-                        'messages' => $pesan,
-                        'tools' => $this->alat(),
-                        'max_tokens' => $anggaran,
-                        'reasoning_effort' => config('services.llm.reasoning_effort'),
-                    ]));
+                        'pesan' => $e->getMessage(),
+                    ]);
+
+                    break;
+                }
 
                 if (! $respon->successful()) {
                     // Dicatat supaya kegagalan gateway bisa ditelusuri (tanpa menulis kunci).
@@ -387,6 +440,13 @@ class AsistenChat
 
                 $jawaban = $respon->json('choices.0.message');
                 $alasan = $respon->json('choices.0.finish_reason');
+
+                // Bersihkan lebih dulu: jawaban yang isinya hanya aksara asing (mis. bocoran
+                // Mandarin dari model) akan kosong setelah dibersihkan, jadi tidak layak kirim.
+                if (is_array($jawaban) && isset($jawaban['content'])) {
+                    $jawaban['content'] = $this->bersihkanJawaban((string) $jawaban['content']);
+                }
+
                 $kosong = trim((string) ($jawaban['content'] ?? '')) === ''
                     && ($jawaban['tool_calls'] ?? []) === [];
 
@@ -402,7 +462,13 @@ class AsistenChat
                 ]);
 
                 if ($percobaan === 2) {
-                    return $kosong ? null : $jawaban;
+                    // Teks kosong tapi ada tool_calls: masih berguna, pakai apa adanya.
+                    // Kalau benar-benar kosong, JANGAN berhenti — coba model cadangan.
+                    if (! $kosong) {
+                        return $jawaban;
+                    }
+
+                    break;
                 }
 
                 $anggaran = min($anggaran * 2, 3000);
@@ -524,7 +590,7 @@ class AsistenChat
                 $dokter,
                 $tanggal,
                 (string) ($argumen['jam'] ?? ''),
-                $argumen['keluhan'] ?? null,
+                $this->ringkasKeluhan($argumen['keluhan'] ?? null),
                 'chatbot',
             );
         } catch (ValidationException $e) {
@@ -659,6 +725,7 @@ class AsistenChat
         7. Tulis jawaban HANYA dengan huruf Latin Bahasa Indonesia. Jangan pernah menulis aksara Mandarin/Arab/Kiril, dan jangan mencampur kata Inggris (kecuali istilah lazim: KTP, QR, WhatsApp, check-in).
         8. JANGAN pakai tanda pisah panjang "—" atau "–" sama sekali. Pakai koma atau titik untuk memisah kalimat, dan tanda hubung biasa hanya untuk rentang angka.
         9. Tulis "poli", bukan "poly". Contoh: poli umum, poli gigi, poli anak.
+        10. Keluhan awal ditanya PALING AKHIR dan hanya sekali. Jangan menanyakan keluhan sebelum dokter, poli, tanggal, dan jam sudah jelas. Setelah pasien setuju pada ringkasan pilihan, baru tanyakan sekali: "Ada keluhan yang mau disampaikan ke dokter? (boleh dilewati)". Kalau pasien sudah menyebut keluhannya sendiri, JANGAN bertanya lagi, cukup ringkas jadi maksimal 120 karakter. Kalau pasien menolak atau menjawab "lewat", panggil buat_janji tanpa parameter keluhan.
         PROMPT;
     }
 
@@ -688,7 +755,7 @@ class AsistenChat
                     'dokter_id' => ['type' => 'integer'],
                     'tanggal' => ['type' => 'string', 'description' => 'Tanggal YYYY-MM-DD.'],
                     'jam' => ['type' => 'string', 'description' => 'Jam HH:MM dari cek_jadwal.'],
-                    'keluhan' => ['type' => 'string', 'description' => 'Keluhan awal pasien (opsional).'],
+                    'keluhan' => ['type' => 'string', 'description' => 'Ringkasan keluhan awal pasien, maksimal 120 karakter (opsional). Isi HANYA dari yang sudah disampaikan pasien; kosongkan kalau pasien menolak atau belum menyebutkannya.'],
                 ], 'required' => ['dokter_id', 'tanggal', 'jam']],
             ]],
             ['type' => 'function', 'function' => [

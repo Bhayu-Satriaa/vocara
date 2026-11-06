@@ -64,8 +64,13 @@ class ChatController extends Controller
 
         if ($hasil === null) {
             $faq = $chatbot->cariJawaban($data['pesan']);
+
+            // Model tidak menjawab. Kalau modelnya memang tidak diaktifkan, "tidak dikenal"
+            // sudah tepat; kalau model ada tapi gagal dihubungi, katakan jujur sedang sibuk.
+            $baku = $asisten->tersedia() ? ChatbotService::JAWABAN_SIBUK : ChatbotService::JAWABAN_TIDAK_DIKENAL;
+
             $hasil = [
-                'isi' => $faq?->jawaban ?? ChatbotService::JAWABAN_TIDAK_DIKENAL,
+                'isi' => $faq?->jawaban ?? $baku,
                 'intent' => $faq ? 'faq' : 'tidak_dikenal',
             ];
         }
@@ -139,9 +144,11 @@ class ChatController extends Controller
             }
 
             if (trim($teks) === '') {
-                // Gateway bermasalah → jawab dari basis pengetahuan seperti jalur biasa.
+                // Gateway bermasalah → jawab dari basis pengetahuan seperti jalur biasa,
+                // dan kalau tidak ada yang cocok, katakan jujur bahwa asisten sedang sibuk.
                 $faq = $chatbot->cariJawaban($data['pesan']);
-                $teks = $faq?->jawaban ?? ChatbotService::JAWABAN_TIDAK_DIKENAL;
+                $baku = $asisten->tersedia() ? ChatbotService::JAWABAN_SIBUK : ChatbotService::JAWABAN_TIDAK_DIKENAL;
+                $teks = $faq?->jawaban ?? $baku;
                 $intent = $faq ? 'faq' : 'tidak_dikenal';
 
                 echo $this->peristiwaSse(['delta' => $teks]);

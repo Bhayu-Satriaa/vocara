@@ -21,6 +21,13 @@ class ChatbotService
     /** Balasan ketika tidak ada pengetahuan yang cocok. */
     public const JAWABAN_TIDAK_DIKENAL = 'Maaf, saya belum punya jawaban untuk itu. Silakan hubungi petugas klinik, atau sampaikan langsung ke dokter saat kunjungan.';
 
+    /**
+     * Dipakai kalau model AI-nya yang gagal dihubungi (gateway mati/lambat), bukan karena
+     * pertanyaannya tidak dikenal. Pesannya harus jujur: model tidak bisa dihubungi,
+     * bukan "belum punya jawaban" (dulu pasien dibuat bingung oleh pesan itu).
+     */
+    public const JAWABAN_SIBUK = 'Maaf, asisten sedang sibuk dan belum bisa menjawab sekarang. Coba kirim ulang sebentar lagi, atau tanyakan langsung ke petugas klinik.';
+
     /** Kata yang terlalu umum, dibuang sebelum pencocokan. */
     private const KATA_UMUM = [
         'apa', 'apakah', 'bagaimana', 'cara', 'dan', 'atau', 'yang', 'di', 'ke', 'dari',

@@ -9,7 +9,9 @@ use App\Models\Patient;
 use App\Models\Poli;
 use App\Models\User;
 use App\Models\Visit;
+use App\Services\ChatbotService;
 use Carbon\Carbon;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -218,6 +220,59 @@ class ChatbotAiTest extends TestCase
         $this->assertSame('chatbot', $visit->sumber);
         $this->assertSame('booking', $visit->status);
         $this->assertSame('08:30', substr((string) $visit->jam, 0, 5));
+        $this->assertSame('sakit gigi sejak kemarin', $visit->keluhan_awal);
+    }
+
+    public function test_keluhan_panjang_dipotong_120_karakter(): void
+    {
+        $dokter = $this->dokter();
+        $tanggal = $this->seninDepan();
+        $pasien = $this->pasien();
+
+        $panjang = str_repeat('kepala pusing dan mual ', 12); // 276 karakter
+
+        $this->fakeSkrip([
+            ['kata' => 'kosong', 'tool' => 'cek_jadwal', 'argumen' => ['dokter_id' => $dokter->id, 'tanggal' => $tanggal]],
+            ['kata' => 'setuju', 'tool' => 'buat_janji', 'argumen' => [
+                'dokter_id' => $dokter->id,
+                'tanggal' => $tanggal,
+                'jam' => '08:30',
+                'keluhan' => $panjang,
+            ]],
+        ], 'Baik, janji kamu sudah tersimpan.');
+
+        $this->actingAs($pasien)->post(route('pasien.chat.kirim'), ['pesan' => 'dokter gigi senin jam berapa yang kosong?']);
+        $this->actingAs($pasien)->post(route('pasien.chat.kirim'), ['pesan' => 'iya setuju']);
+
+        $keluhan = Visit::query()->first()?->keluhan_awal;
+
+        $this->assertNotNull($keluhan);
+        $this->assertSame(120, mb_strlen($keluhan), 'keluhan dipotong 120 karakter');
+    }
+
+    public function test_janji_tetap_dibuat_kalau_pasien_melewati_keluhan(): void
+    {
+        $dokter = $this->dokter();
+        $tanggal = $this->seninDepan();
+        $pasien = $this->pasien();
+
+        $this->fakeSkrip([
+            ['kata' => 'kosong', 'tool' => 'cek_jadwal', 'argumen' => ['dokter_id' => $dokter->id, 'tanggal' => $tanggal]],
+            // Pasien menjawab "lewat" -> model tidak mengirim parameter keluhan.
+            ['kata' => 'setuju', 'tool' => 'buat_janji', 'argumen' => [
+                'dokter_id' => $dokter->id,
+                'tanggal' => $tanggal,
+                'jam' => '08:30',
+            ]],
+        ], 'Baik, janji kamu sudah tersimpan.');
+
+        $this->actingAs($pasien)->post(route('pasien.chat.kirim'), ['pesan' => 'dokter gigi senin jam berapa yang kosong?']);
+        $this->actingAs($pasien)->post(route('pasien.chat.kirim'), ['pesan' => 'setuju, keluhan lewat saja']);
+
+        $visit = Visit::query()->first();
+
+        $this->assertNotNull($visit, 'janji tetap dibuat walau keluhan dilewati');
+        $this->assertNull($visit->keluhan_awal);
     }
 
     public function test_buat_janji_ditolak_kalau_slot_belum_pernah_ditawarkan(): void
@@ -282,6 +337,59 @@ class ChatbotAiTest extends TestCase
         $this->assertDatabaseCount('visits', 1);
     }
 
+    public function test_putaran_terakhir_melarang_tool_agar_model_wajib_menjawab(): void
+    {
+        $dokter = $this->dokter();
+        $tanggal = $this->seninDepan();
+        $pasien = $this->pasien();
+        $pilihan = [];
+        $no = 0;
+
+        // Model selalu minta tool. Putaran terakhir harus dikirim TANPA parameter `tools`
+        // supaya percakapan tidak berhenti tanpa jawaban.
+        Http::fake(function ($request) use (&$pilihan, &$no, $dokter, $tanggal) {
+            $data = $request->data();
+            $pilihan[] = array_key_exists('tools', $data) ? 'ada tools' : 'tanpa tools';
+
+            if (! array_key_exists('tools', $data)) {
+                return $this->responTeks('Baik, jadwalnya sudah saya cek.');
+            }
+
+            $no++;
+
+            return $this->responTool('cek_jadwal', ['dokter_id' => $dokter->id, 'tanggal' => $tanggal], 'call_'.$no);
+        });
+
+        $this->actingAs($pasien)->post(route('pasien.chat.kirim'), ['pesan' => 'jadwal dokter gigi?']);
+
+        $this->assertSame('tanpa tools', end($pilihan), 'putaran terakhir tanpa tools');
+        $this->assertContains('ada tools', $pilihan, 'putaran awal tetap boleh memakai tool');
+        $this->assertDatabaseHas('chat_messages', [
+            'pengirim' => 'bot',
+            'isi' => 'Baik, jadwalnya sudah saya cek.',
+        ]);
+    }
+
+    public function test_gateway_tidak_bisa_dihubungi_jawabannya_jujur_sibuk(): void
+    {
+        // Gateway dikonfigurasi (jadi AI memang aktif) tetapi koneksinya ditolak.
+        Http::fake(function () {
+            throw new ConnectionException('koneksi ke gateway ditolak');
+        });
+
+        $this->actingAs($this->pasien())
+            ->post(route('pasien.chat.kirim'), ['pesan' => 'ada dokter spesialis jantung?'])
+            ->assertRedirect(route('pasien.chat'));
+
+        $this->assertDatabaseHas('chat_messages', [
+            'pengirim' => 'bot',
+            'intent' => 'tidak_dikenal',
+            'isi' => ChatbotService::JAWABAN_SIBUK,
+        ]);
+
+        $this->assertStringContainsString('Gateway model tidak bisa dihubungi', file_get_contents(storage_path('logs/laravel.log')));
+    }
+
     public function test_gateway_model_mati_jatuh_ke_jawaban_faq(): void
     {
         ChatbotKnowledge::query()->create([
@@ -333,6 +441,8 @@ class ChatbotAiTest extends TestCase
         $this->assertStringContainsString('Pendaftaran dibuka Senin-Jumat 08.00-16.00.', $sistem);
         $this->assertStringNotContainsString('JANGAN DIKIRIM KE PASIEN', $sistem);
         $this->assertStringContainsString('tetap WAJIB dari hasil tool', $sistem);
+        $this->assertStringContainsString('Keluhan awal ditanya PALING AKHIR', $sistem);
+        $this->assertStringContainsString('maksimal 120 karakter', $sistem);
     }
 
     public function test_panel_janji_tampil_di_halaman_chat(): void

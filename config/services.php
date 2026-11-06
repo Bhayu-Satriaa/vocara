@@ -48,7 +48,10 @@ return [
         // LAMBAT (8-17 dtk) daripada jalur biasa (1,5-2,2 dtk). Nyalakan hanya kalau
         // gateway-nya sudah membaik: CHAT_STREAM=true.
         'chat_stream' => (bool) env('CHAT_STREAM', false),
-        'timeout' => (int) env('LLM_TIMEOUT', 60),
+        // 60 dtk terlalu lama: kalau model utama menggantung, pasien menunggu satu menit
+        // sebelum model cadangan dicoba (terukur 64 dtk pada uji 5 Nov 2026). 30 dtk sudah
+        // jauh di atas waktu normal (2-8 dtk) dan tetap memberi ruang untuk jawaban panjang.
+        'timeout' => (int) env('LLM_TIMEOUT', 30),
     ],
 
     'resend' => [
