@@ -12,15 +12,24 @@ use Illuminate\View\View;
 class AkunStafController extends Controller
 {
     /** Daftar akun staf (pasien tidak muncul di sini). */
-    public function index(): View
+    public function index(Request $request): View
     {
+        $role = $request->query('role', 'semua');
+        $jumlah = User::query()->whereIn('role', User::ROLE_STAF)->count();
+
         $akun = User::query()
             ->whereIn('role', User::ROLE_STAF)
+            ->when(in_array($role, User::ROLE_STAF, true), fn ($query) => $query->where('role', $role))
             ->orderBy('role')
             ->orderBy('name')
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('admin.akun-staf.index', ['akun' => $akun]);
+        return view('admin.akun-staf.index', [
+            'akun' => $akun,
+            'roleFilter' => in_array($role, User::ROLE_STAF, true) ? $role : 'semua',
+            'jumlah' => $jumlah,
+        ]);
     }
 
     public function create(): View

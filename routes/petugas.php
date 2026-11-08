@@ -5,7 +5,7 @@ use App\Http\Controllers\Petugas\PemindaianQrController;
 use Illuminate\Support\Facades\Route;
 
 // Wilayah petugas pendaftaran / kasir (admin boleh ikut memantau).
-Route::middleware(['auth', 'role:petugas,admin'])->prefix('petugas')->name('petugas.')->group(function () {
+Route::middleware(['auth', 'role:petugas,admin'])->prefix('dashboard')->name('petugas.')->group(function () {
     // Pendaftaran Pasien Baru (Walk-in)
     Route::get('/pasien/baru', [PasienController::class, 'create'])->name('pasien.create');
     Route::post('/pasien', [PasienController::class, 'store'])->name('pasien.store');

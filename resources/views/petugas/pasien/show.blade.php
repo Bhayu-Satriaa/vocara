@@ -67,6 +67,13 @@
 
             <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex flex-wrap items-center gap-2">
+                    @if (auth()->user()->punyaRole('admin'))
+                        <a href="{{ route('admin.pasien.show', $pasien) }}"
+                           class="inline-flex h-[38px] items-center gap-2 rounded-[9px] border border-line bg-surface px-4 text-xs font-semibold text-primary hover:bg-slate-50">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+                            Lihat Detail Data Diri
+                        </a>
+                    @endif
                     <a href="{{ route('petugas.pasien.kartu', $pasien) }}" target="_blank"
                        class="inline-flex h-[38px] items-center gap-2 rounded-[9px] border border-line bg-surface px-4 text-xs font-semibold text-ink hover:bg-slate-50">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
