@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('judul', 'Sistem Klinik Kesehatan')</title>
     {{-- Terapkan state sidebar dari localStorage sebelum paint, supaya tidak kedip. --}}
     <script>if (localStorage.getItem('vocara.sidebar') === 'collapsed') document.documentElement.dataset.collapsed = '';</script>
@@ -22,6 +23,7 @@
             if (auth()->user()->punyaRole('petugas', 'admin')) {
                 $menu[] = ['label' => 'Pasien Baru', 'href' => route('petugas.pasien.create'), 'ikon' => 'user-plus', 'aktif' => request()->routeIs('petugas.pasien*'), 'grup' => 'Pendaftaran'];
                 $menu[] = ['label' => 'Scan QR pasien', 'href' => route('petugas.scan'), 'ikon' => 'scan', 'aktif' => request()->routeIs('petugas.scan*'), 'grup' => 'Pendaftaran'];
+                $menu[] = ['label' => 'Antrean hari ini', 'href' => route('petugas.antrean.index'), 'ikon' => 'antrean', 'aktif' => request()->routeIs('petugas.antrean*'), 'grup' => 'Pendaftaran'];
             }
             if (auth()->user()->punyaRole('admin')) {
                 $menu[] = ['label' => 'Persetujuan profil', 'href' => route('admin.persetujuan-profil.index'), 'ikon' => 'user', 'aktif' => request()->routeIs('admin.persetujuan-profil*'), 'grup' => 'Kelola'];
@@ -71,6 +73,9 @@
                             @break
                             @case('scan')
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M3 12h18"/></svg>
+                            @break
+                            @case('antrean')
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                             @break
                             @case('user')
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>

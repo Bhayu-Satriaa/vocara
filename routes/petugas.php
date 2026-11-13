@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Petugas\AntreanController;
 use App\Http\Controllers\Petugas\PasienController;
 use App\Http\Controllers\Petugas\PemindaianQrController;
 use Illuminate\Support\Facades\Route;
@@ -19,5 +20,10 @@ Route::middleware(['auth', 'role:petugas,admin'])->prefix('dashboard')->name('pe
     Route::post('/scan/{pasien}/verifikasi', [PemindaianQrController::class, 'verifikasi'])->name('scan.verifikasi');
     Route::post('/scan/{pasien}/checkin', [PemindaianQrController::class, 'checkin'])->name('scan.checkin');
 
-    // Antrean, check-in kunjungan, dan kasir ditambahkan di sini.
+    // Manajemen Antrean & Konfirmasi Booking (Tugas 4)
+    Route::get('/antrean', [AntreanController::class, 'index'])->name('antrean.index');
+    Route::post('/antrean/{visit}/panggil', [AntreanController::class, 'panggil'])->name('antrean.panggil');
+    Route::post('/antrean/{visit}/status', [AntreanController::class, 'updateStatus'])->name('antrean.status');
+    Route::post('/antrean/{visit}/batal', [AntreanController::class, 'batal'])->name('antrean.batal');
+    Route::post('/antrean/{visit}/konfirmasi', [AntreanController::class, 'konfirmasiBooking'])->name('antrean.konfirmasi');
 });

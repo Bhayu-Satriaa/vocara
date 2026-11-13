@@ -53,11 +53,16 @@
                         Daftar Pasien
                     </a>
                 </li>
-                <li class="flex gap-3.5 py-3.5">
-                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-indigo-soft text-indigo-ink">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
-                    </span>
-                    <span class="pt-2 text-sm font-medium">Kelola antrean, konfirmasi booking online.</span>
+                <li class="flex items-center justify-between gap-3.5 py-3.5">
+                    <div class="flex gap-3.5 items-center">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-indigo-soft text-indigo-ink">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+                        </span>
+                        <span class="text-sm font-medium">Kelola antrean hari ini dan konfirmasi booking online.</span>
+                    </div>
+                    <a href="{{ route('petugas.antrean.index') }}" class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 no-underline">
+                        Buka Antrean
+                    </a>
                 </li>
                 <li class="flex gap-3.5 py-3.5">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-accent">
