@@ -240,38 +240,17 @@
                                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                                                     Panggil
                                                 </button>
-                                            @endif
-
-                                            {{-- Ganti Status Cepat --}}
-                                            @if (!in_array($item->status, ['selesai', 'batal']))
-                                                <div class="relative inline-block text-left" x-data="{ open: false }">
-                                                    <form method="POST" action="{{ route('petugas.antrean.status', $item) }}" class="inline">
-                                                        @csrf
-                                                        <select name="status" onchange="this.form.submit()"
-                                                                title="Ubah Status Kunjungan"
-                                                                class="h-8 rounded-lg border border-line bg-canvas px-2 text-[11px] font-semibold text-ink focus:border-primary focus:outline-none">
-                                                            <option value="" disabled selected>Ubah Status...</option>
-                                                            @if ($item->status === 'menunggu')
-                                                                <option value="diperiksa">&rarr; Diperiksa Dokter</option>
-                                                            @endif
-                                                            @if (in_array($item->status, ['menunggu', 'diperiksa']))
-                                                                <option value="farmasi">&rarr; Antrean Farmasi</option>
-                                                                <option value="pembayaran">&rarr; Pembayaran / Kasir</option>
-                                                            @endif
-                                                            @if (in_array($item->status, ['menunggu', 'diperiksa', 'farmasi', 'pembayaran']))
-                                                                <option value="selesai">&rarr; Selesai</option>
-                                                            @endif
-                                                        </select>
-                                                    </form>
-                                                </div>
 
                                                 {{-- Tombol Batal --}}
                                                 <button type="button"
                                                         onclick="bukaModalBatal('{{ $item->id }}', '{{ $item->no_antrian }}', '{{ $item->patient->nama_lengkap }}')"
-                                                        title="Batalkan Antrean"
-                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted hover:border-red-300 hover:bg-red-50 hover:text-red-700 transition-colors">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                        title="Batalkan Antrean (Pasien Tidak Hadir / Batal)"
+                                                        class="inline-flex h-8 items-center gap-1 rounded-lg border border-line px-2 text-[11px] font-medium text-muted hover:border-red-300 hover:bg-red-50 hover:text-red-700 transition-colors">
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                    Batal
                                                 </button>
+                                            @else
+                                                <span class="text-[11px] text-faint italic">Tidak ada aksi</span>
                                             @endif
                                         </div>
                                     </td>
@@ -343,13 +322,13 @@
                                     </td>
                                     <td class="py-3.5 px-4 text-right">
                                         <div class="inline-flex items-center gap-2">
-                                            {{-- Konfirmasi Check-in --}}
+                                            {{-- Konfirmasi Verifikasi Kedatangan (Check-in) --}}
                                             <form method="POST" action="{{ route('petugas.antrean.konfirmasi', $book) }}">
                                                 @csrf
                                                 <button type="submit"
                                                         class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-white hover:bg-primary-hover shadow-xs transition-colors">
                                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                    Check-in Antrean
+                                                    Verifikasi Hadir & Check-in
                                                 </button>
                                             </form>
 

@@ -135,34 +135,6 @@ class AntreanController extends Controller
     }
 
     /**
-     * Ubah status antrean dengan validasi transisi yang sah.
-     */
-    public function updateStatus(Request $request, Visit $visit): RedirectResponse
-    {
-        $validated = $request->validate([
-            'status' => ['required', 'in:' . implode(',', Visit::STATUS)],
-        ]);
-
-        $statusBaru = $validated['status'];
-        $statusLama = $visit->status;
-
-        // Cegah perubahan status sembarangan jika kunjungan sudah selesai atau dibatalkan
-        if (in_array($statusLama, ['selesai', 'batal'])) {
-            return back()->with('peringatan', "Kunjungan yang sudah {$statusLama} tidak dapat diubah statusnya lagi.");
-        }
-
-        $visit->update(['status' => $statusBaru]);
-
-        ActivityLog::catat(
-            'ubah_status_antrean',
-            "Petugas mengubah status kunjungan #{$visit->no_antrian} ({$visit->patient->nama_lengkap}) dari {$statusLama} ke {$statusBaru}",
-            $visit
-        );
-
-        return back()->with('sukses', "Status antrean #{$visit->no_antrian} berhasil diperbarui menjadi '{$statusBaru}'.");
-    }
-
-    /**
      * Batalkan antrean pasien dengan alasan wajib.
      */
     public function batal(Request $request, Visit $visit): RedirectResponse
@@ -190,12 +162,12 @@ class AntreanController extends Controller
     }
 
     /**
-     * Konfirmasi booking online menjadi antrean hari ini.
+     * Verifikasi kehadiran booking online dan terbitkan nomor antrean saat pasien tiba di klinik.
      */
     public function konfirmasiBooking(Request $request, Visit $visit): RedirectResponse
     {
         if ($visit->status !== 'booking') {
-            return back()->with('peringatan', 'Hanya janji temu berstatus booking yang dapat dikonfirmasi.');
+            return back()->with('peringatan', 'Hanya janji temu berstatus booking yang dapat dikonfirmasi kehadirannya.');
         }
 
         DB::transaction(function () use ($request, $visit) {
@@ -214,13 +186,13 @@ class AntreanController extends Controller
             ]);
 
             ActivityLog::catat(
-                'konfirmasi_booking',
-                "Petugas mengonfirmasi booking online {$visit->patient->nama_lengkap} menjadi antrean #{$noAntrean}",
+                'verifikasi_kedatangan_booking',
+                "Petugas memverifikasi kedatangan pasien booking {$visit->patient->nama_lengkap} (Check-in antrean #{$noAntrean})",
                 $visit
             );
         });
 
-        return back()->with('sukses', "Booking online {$visit->patient->nama_lengkap} berhasil dikonfirmasi ke antrean #{$visit->no_antrian}.");
+        return back()->with('sukses', "Kedatangan pasien {$visit->patient->nama_lengkap} berhasil diverifikasi. Nomor antrean: #{$visit->no_antrian}.");
     }
 }
 
